@@ -93,8 +93,8 @@ void loop() {
 
   switch(managerState) {
     case NoTriggerNoDemand:
-      //Serial.print("GRANTED: HIGH ");
-      //Serial.println("NoTriggerNoDemand");
+      Serial.print("GRANTED: HIGH ");
+      Serial.println("NoTriggerNoDemand");
       leaveHigh(GRANTED);
       if(!demandRequest() && !trigger) {
       managerState = NoTriggerNoDemand;
@@ -108,8 +108,8 @@ void loop() {
       break;
 
     case TriggerIamMaster:
-      //Serial.print("GRANTED: HIGH ");
-      //Serial.println("TriggerIamMaster");
+      Serial.print("GRANTED: HIGH ");
+      Serial.println("TriggerIamMaster");
       leaveHigh(GRANTED);
       if(!trigger && !demandRequest()) {
         managerState = NoTriggerNoDemand;
@@ -123,8 +123,8 @@ void loop() {
       break;
 
     case IamSlave:
-      //Serial.print("GRANTED: LOW ");
-      //Serial.println("IamSlave");
+      Serial.print("GRANTED: LOW ");
+      Serial.println("IamSlave");
       pullLow(GRANTED);
       if(!demandRequest()) {
         managerState = NoTriggerNoDemand;
@@ -426,10 +426,10 @@ void loop() {
           trigger = false;
           calculateXYZ();
           calculateTemp();
-          Serial.print("arduino: ");
-          Serial.print(temp);
-          Serial.print(", ");
-          Serial.println(danger);
+          //Serial.print("arduino: ");
+          //Serial.print(temp);
+          //Serial.print(", ");
+          //Serial.println(danger);
           state = 0;
           break;
 
