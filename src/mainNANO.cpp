@@ -4,6 +4,11 @@
 /* === UI MACROS === */
 #define _B1 13
 
+/* === SHIFT REGISTER MACROS === */
+#define dataPin 8
+#define latchPin A3
+#define clockPin 12
+
 /* === IO MACROS === */
 #define GRANTED A0
 #define ANALOG_INPUT A6
@@ -37,13 +42,20 @@ bool trigger;
 unsigned char B1_state;
 
 /* === MODULE VARIABLES === */
-bool init_module0_clock, init_module1_clock, init_module2_clock, init_module3_clock, init_module4_clock;
+bool init_module0_clock, init_module1_clock, init_module2_clock, init_module3_clock, init_module4_clock, init_module5_clock, init_module6_clock;
 
 /* === MPU VARIABLES === */
 int AcX, AcY, AcZ;
 float temp;
 bool mpuWake, danger;
 char orientation;
+
+/* === HEARTBEAT VARIABLES === */
+unsigned long heartBeatOldTime;
+int heartBeatTime, heartBeatState;
+
+/* === 7-SEGMENT VARIABLES === */
+byte displayOutput;
 
 /* === FUNCTION PROTOTYPES === */
 bool demandRequest();
@@ -52,24 +64,34 @@ void pullLow (unsigned char pin);
 void calculateXYZ();
 void calculateTemp();
 void mpuWakeUp();
+void heartBeat();
+void displayUpdate(byte eightBits);
+byte numToBits(int number);
 //void requestEvent();
 
 
 void setup() {
-  pinMode(_B1, INPUT); //_B1 is INPUT because it's conntected to D13, logics inverted
+  pinMode(_B1, INPUT); // _B1 is INPUT because it's conntected to D13, logics inverted
 
-  //LEDs defined as OUTPUTs therefore NANO will expect an output at D2, D4 and not an INPUT
+  // LEDs defined as OUTPUTs therefore NANO will expect an output at D2, D4 and not an INPUT
   pinMode(LED_RED_1, OUTPUT);
   pinMode(LED_GREEN_1, OUTPUT);
 
-  //Setting all clocks to true
+  /* === SHIFT REGISTER SETUP === */
+  pinMode(dataPin, OUTPUT);
+  pinMode(latchPin, OUTPUT);
+  pinMode(clockPin, OUTPUT);
+
+  /* === CLOCK SETUP === */
   init_module0_clock = true;
   init_module1_clock = true;
   init_module2_clock = true;
   init_module3_clock = true;
   init_module4_clock = true;
+  init_module5_clock = true;
+  init_module6_clock = true;
 
-  //_B1 is not pressed by default
+  /* === BUTTON SETUP === */
   B1_state = notPRESSED;
 
   /* === RESOURCE MANAGER SETUP === */
@@ -79,6 +101,13 @@ void setup() {
 
   /* === MPU SETUP === */
   mpuWake = true;
+
+  /* === HEARTBEAT SETUP === */
+  heartBeatTime = 500; // Setting the heartbeat delay to 500ms
+  heartBeatState = 0; // Setting the heartbeat status to off
+
+  /* === DISPLAY SETUP === */
+  //displayOutput = B00111110;
 
   /* === SERIAL MONITOR SETUP === */
   Serial.begin(9600);
@@ -93,8 +122,8 @@ void loop() {
 
   switch(managerState) {
     case NoTriggerNoDemand:
-      Serial.print("GRANTED: HIGH ");
-      Serial.println("NoTriggerNoDemand");
+      //Serial.print("GRANTED: HIGH ");
+      //Serial.println("NoTriggerNoDemand");
       leaveHigh(GRANTED);
       if(!demandRequest() && !trigger) {
       managerState = NoTriggerNoDemand;
@@ -108,8 +137,8 @@ void loop() {
       break;
 
     case TriggerIamMaster:
-      Serial.print("GRANTED: HIGH ");
-      Serial.println("TriggerIamMaster");
+      //Serial.print("GRANTED: HIGH ");
+      //Serial.println("TriggerIamMaster");
       leaveHigh(GRANTED);
       if(!trigger && !demandRequest()) {
         managerState = NoTriggerNoDemand;
@@ -123,8 +152,8 @@ void loop() {
       break;
 
     case IamSlave:
-      Serial.print("GRANTED: LOW ");
-      Serial.println("IamSlave");
+      //Serial.print("GRANTED: LOW ");
+      //Serial.println("IamSlave");
       pullLow(GRANTED);
       if(!demandRequest()) {
         managerState = NoTriggerNoDemand;
@@ -439,7 +468,57 @@ void loop() {
       }  
     }
   }
-  
+
+  /* === MODULE 5 - HEARTBEAT MANAGER === */
+  {
+    static unsigned long module_time, module_delay;
+    static bool module_doStep;
+    
+    if (init_module5_clock) {
+      module_delay = 500;
+      module_time = millis();
+      module_doStep = false;
+      init_module5_clock = false;
+    }
+    else {
+      unsigned long m = millis();
+      if (((unsigned long)(m - module_time)) > module_delay) {
+        module_time = m; 
+        module_doStep = true;
+      }
+      else module_doStep = false;
+    }
+
+    if (module_doStep) {
+      heartBeat();
+    }
+  }
+
+  /* === MODULE 6 - DISPLAY MANAGER === */
+  {
+    static unsigned long module_time, module_delay;
+    static bool module_doStep;
+    
+    if (init_module6_clock) {
+      module_delay = 1;
+      module_time = millis();
+      module_doStep = false;
+      init_module6_clock = false;
+    }
+    else {
+      unsigned long m = millis();
+      if (((unsigned long)(m - module_time)) > module_delay) {
+        module_time = m; 
+        module_doStep = true;
+      }
+      else module_doStep = false;
+    }
+
+    if (module_doStep) {
+      displayUpdate(displayOutput);
+    }
+  }
+
 }
 
 
@@ -529,4 +608,85 @@ void mpuWakeUp() {
   Wire.write(0);
   Wire.endTransmission(true);
   mpuWake = false;
+}
+
+// I am totally unsure if this is correct or not but it works...
+void heartBeat() {
+  switch(heartBeatState) {
+    case 0:
+      displayOutput |= B00000001;
+      displayUpdate(displayOutput);
+      heartBeatState = 1;
+      break;
+    case 1:
+      displayOutput &= B00000000;
+      displayUpdate(displayOutput);
+      heartBeatState = 0;
+      break;
+  }
+}
+
+void displayUpdate(byte eightBits) {
+  digitalWrite(latchPin, LOW); // Prepare the shift register for data
+  shiftOut(dataPin, clockPin, LSBFIRST, eightBits); // Send the data
+  digitalWrite(latchPin, HIGH); // Update the display
+}
+
+byte numToBits(int number) {
+  switch (number) {
+    case 0:
+      return B00111111; //0
+      break;
+    case 1:
+      return B00000110; //1
+      break;
+    case 2:
+      return B01011011; //2
+      break;
+    case 3:
+      return B01001111; //3
+      break;
+    case 4:
+      return B01100110; //4
+      break;
+    case 5:
+      return B01101101; //5
+      break;
+    case 6:
+      return B01111101; //6
+      break;
+    case 7:
+      return B00000111; //7
+      break;
+    case 8:
+      return B01111111; //8
+      break;
+    case 9:
+      return B01101111; //9
+      break;
+    case 10:
+      return B01110111; //A
+      break;
+    case 11:
+      return B01111100; //b
+      break;
+    case 12:
+      return B00111001; //C
+      break;
+    case 13:
+      return B01011110; //d
+      break;
+    case 14:
+      return B01111001; //E
+      break;
+    case 15:
+      return B01110001; //F
+      break;
+    case 16:
+      return B00000001; //.
+      break;
+    default:
+      return B10010010; // Error condition, displays three vertical bars
+      break;
+  }
 }
