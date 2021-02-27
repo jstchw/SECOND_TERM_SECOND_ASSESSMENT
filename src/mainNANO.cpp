@@ -364,6 +364,7 @@ void loop() {
     static unsigned long module_time, module_delay;
     static bool module_doStep;
     static unsigned char state;
+    static bool firstTime;
     
     if (init_module3_clock) {
       module_delay = 4;
@@ -371,7 +372,7 @@ void loop() {
       module_doStep = false;
       init_module3_clock = false;
       state = 0;
-      digitalWrite(LED_TRI_R, LOW);
+      firstTime = true;
     }
     else {
       unsigned long m = millis();
@@ -390,6 +391,7 @@ void loop() {
           digitalWrite(LED_TRI_B, LOW);
           if(B0_state == normalPRESS) {
             state = 1;
+            firstTime = true;
           }
           break;
 
@@ -401,7 +403,16 @@ void loop() {
             state = 2;
           }
           break;
-        case 2: // AMBER (WORKS DECENT ENOUGH BUT NEEDS SOME TWEAKING)
+        case 2: // AMBER (WORKS DECENT ENOUGH BUT NEEDS SOME TWEAKING) // SOMEWHAT DONE
+          if(firstTime) {
+            if (brightness < 191) {
+              amberBrightness = brightness;
+            }
+            else if (brightness > 191) {
+              amberBrightness = 191;
+            }
+            firstTime = false;
+          }
           analogWrite(LED_TRI_R, brightness);
           digitalWrite(LED_TRI_B, LOW);
           analogWrite(LED_TRI_G, amberBrightness);
@@ -449,10 +460,21 @@ void loop() {
 
           if(B0_state == normalPRESS) {
             state = 3;
+            firstTime = true;
           }
           break;
 
         case 3: // AMBER (WORKS DECENT ENOUGH BUT NEEDS SOME TWEAKING)
+          if(firstTime) {
+            if (brightness < 191) {
+              amberBrightness = brightness;
+            }
+            else if (brightness > 191) {
+              amberBrightness = 191;
+            }
+            firstTime = false;
+          }
+
           analogWrite(LED_TRI_R, brightness);
           digitalWrite(LED_TRI_B, LOW);
           analogWrite(LED_TRI_G, amberBrightness);
@@ -594,19 +616,21 @@ void loop() {
     }
   }
 
-  /* === MODULE 4 - LED_GREEN_1 MANAGER === */
+  /* === MODULE 4 - FRUIT MACHINE === */
   {
     static unsigned long module_time, module_delay;
     static bool module_doStep;
-    static unsigned char state;
+    static unsigned char state0, state1;
+    static bool firstTime;
     
     if (init_module4_clock) {
-      module_delay = 270;
+      module_delay = 50;
       module_time = millis();
       module_doStep = false;
       init_module4_clock = false;
-      state=0;
-      digitalWrite(LED_GREEN_1, LOW);
+      state0 = 0;
+      state1 = 0;
+      firstTime = true;
     }
     else {
       unsigned long m = millis();
@@ -618,19 +642,77 @@ void loop() {
     }
 
     if (module_doStep) {
-      switch(state) {
-        case 0: 
-          digitalWrite(LED_GREEN_1, HIGH);
-            state = 1;
+      if(firstTime) {
+        digitalWrite(LED_TRI_R, LOW);
+        digitalWrite(LED_TRI_G, LOW);
+        digitalWrite(LED_TRI_B, LOW);
+        firstTime = false;
+      }
+      if(B0_state == normalPRESS) {
+        switch(state0) {
+          case 0: 
+            digitalWrite(LED_YELLOW_1, LOW);
+            digitalWrite(LED_GREEN_1, LOW);
+            digitalWrite(LED_RED_1, HIGH);
+            state0 = 1;
             break;
-        case 1: 
-          digitalWrite(LED_GREEN_1, LOW);
-          state = 0;
-          break;
-        default: 
-          state = 0; 
-          break;
-      }  
+          case 1: 
+            digitalWrite(LED_YELLOW_1, HIGH);
+            digitalWrite(LED_GREEN_1, LOW);
+            digitalWrite(LED_RED_1, LOW);
+            state0 = 2;
+            break;
+          case 2:
+            digitalWrite(LED_YELLOW_1, LOW);
+            digitalWrite(LED_GREEN_1, HIGH);
+            digitalWrite(LED_RED_1, LOW);
+            state0 = 0;
+            break;
+          default: 
+            state0 = 0; 
+            break;
+        }  
+      }
+
+      else {
+        digitalWrite(LED_YELLOW_1, LOW);
+        digitalWrite(LED_GREEN_1, LOW);
+        digitalWrite(LED_RED_1, LOW);
+        state0 = 0;
+      }
+
+      if (B2_state == normalPRESS) {
+        switch(state1) {
+          case 0: 
+            digitalWrite(LED_YELLOW_2, LOW);
+            digitalWrite(LED_GREEN_2, LOW);
+            digitalWrite(LED_RED_2, HIGH);
+            state1 = 1;
+            break;
+          case 1: 
+            digitalWrite(LED_YELLOW_2, HIGH);
+            digitalWrite(LED_GREEN_2, LOW);
+            digitalWrite(LED_RED_2, LOW);
+            state1 = 2;
+            break;
+          case 2:
+            digitalWrite(LED_YELLOW_2, LOW);
+            digitalWrite(LED_GREEN_2, HIGH);
+            digitalWrite(LED_RED_2, LOW);
+            state1 = 0;
+            break;
+          default: 
+            state1 = 0; 
+            break;
+        }
+      }
+
+      else {
+        digitalWrite(LED_YELLOW_2, LOW);
+        digitalWrite(LED_GREEN_2, LOW);
+        digitalWrite(LED_RED_2, LOW);
+        state1 = 0;
+      }
     }
   }
 
@@ -658,16 +740,16 @@ void loop() {
 
     if (module_doStep) {
       switch(state) {
-        case 0:   // MODULE 1 OFF, MODULE 2 OFF, WAITING FOR THE BUTTON TO BE PRESSED
+        case 0:   // MODULE 3 (3-COLOR-MODE) OFF, MODULE 4 (FRUIT MACHINE) OFF, WAITING FOR THE BUTTON TO BE PRESSED
           init_module3_clock = true;
           init_module4_clock = true;
           if (B1_state == normalPRESS)
           {
-            state = 1;           
+            state = 1;
           }
           break;
           
-        case 1:   // MODULE 1 OFF, MODULE 2 OFF, WAITING FOR THE BUTTON TO BE RELEASED
+        case 1:   // MODULE 3 (3-COLOR-MODE) OFF, MODULE 4 (FRUIT MACHINE) OFF, WAITING FOR THE BUTTON TO BE RELEASED
           init_module3_clock = true;            
           init_module4_clock = true;
           if (B1_state == notPRESSED) {
@@ -675,7 +757,7 @@ void loop() {
           }
           break;
 
-        case 2:   // MODULE 1 ON, MODULE 2 OFF, WAITING FOR THE BUTTON TO BE PRESSED
+        case 2:   // MODULE 3 ON, MODULE 4 OFF, WAITING FOR THE BUTTON TO BE PRESSED
           init_module3_clock = false;
           init_module4_clock = true;
           if (B1_state == normalPRESS) {
@@ -683,7 +765,7 @@ void loop() {
           }
           break;
             
-        case 3:   // MODULE 1 ON, MODULE 2 OFF, WAITING FOR THE BUTTON TO BE RELEASED
+        case 3:   // MODULE 3 ON, MODULE 4 OFF, WAITING FOR THE BUTTON TO BE RELEASED
           init_module3_clock = false;
           init_module4_clock = true;
           if (B1_state == notPRESSED) {
@@ -691,7 +773,7 @@ void loop() {
           }
           break;
 
-        case 4:   // MODULE 1 OFF, MODULE 2 ON, WAITING FOR THE BUTTON TO BE RELEASED
+        case 4:   // MODULE 3 OFF, MODULE 4 ON, WAITING FOR THE BUTTON TO BE PRESSED
           init_module3_clock = true;
           init_module4_clock = false;
           if (B1_state == normalPRESS) {
@@ -699,15 +781,15 @@ void loop() {
           }
           break;
             
-        case 5:   // MODULE 1 OFF, MODULE 2 ON, WAITING FOR THE BUTTON TO BE RELEASED
+        case 5:   // MODULE 3 OFF, MODULE 4 ON, WAITING FOR THE BUTTON TO BE RELEASED
           init_module3_clock = true;
           init_module4_clock = false;
           if (B1_state == notPRESSED) {
-            state = 6;           
+            state = 0; // STATE 0, MUST BE CHANGED TO 6 FOR OTHER MODULES TO WORK !!!  
           }
           break;
 
-        case 6:   // MODULE 1 ON, MODULE 2 ON, WAITING FOR THE BUTTON TO BE RELEASED
+        /*case 6:   // MODULE 3 ON, MODULE 4 ON, WAITING FOR THE BUTTON TO BE PRESSED
           init_module3_clock = false;
           init_module4_clock = false;
           if (B1_state == normalPRESS) {
@@ -715,13 +797,13 @@ void loop() {
           }
           break;
             
-        case 7:   // MODULE 1 ON, MODULE 2 ON, WAITING FOR THE BUTTON TO BE RELEASED
+        case 7:   // MODULE 3 ON, MODULE 4 ON, WAITING FOR THE BUTTON TO BE RELEASED
           init_module3_clock = false;
           init_module4_clock = false;
           if (B1_state == notPRESSED) {
             state = 0;           
           }
-          break;
+          break;*/
 
         default: 
           state = 0; 
@@ -969,13 +1051,13 @@ void displayUpdate(byte eightBits) {
 byte numToBits(int number) {
   switch (number) {
     case 0:
-      return B00111111; //0
+      return B11101110; //A
       break;
     case 1:
-      return B00000110; //1
+      return B00111110; //b
       break;
     case 2:
-      return B01011011; //2
+      return B10011100; //C
       break;
     case 3:
       return B01001111; //3
