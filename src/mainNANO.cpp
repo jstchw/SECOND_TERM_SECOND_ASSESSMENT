@@ -887,27 +887,12 @@ void loop() {
 
   /* === MODULE 7 - HEARTBEAT MANAGER === */
   {
-    static unsigned long module_time, module_delay;
-    static bool module_doStep;
+    static unsigned long module_time = millis() ,  module_delay=500;
     
-    if (init_module7_clock) {
-      module_delay = 500;
-      module_time = millis();
-      module_doStep = false;
-      init_module7_clock = false;
-    }
-    else {
-      unsigned long m = millis();
-      if (((unsigned long)(m - module_time)) > module_delay) {
-        module_time = m; 
-        module_doStep = true;
+      if (((unsigned long)(millis() - module_time)) > module_delay) {
+        module_time += module_delay; 
+        heartBeat();
       }
-      else module_doStep = false;
-    }
-
-    if (module_doStep) {
-      heartBeat();
-    }
   }
 
   /* === MODULE 8 - DISPLAY MANAGER === */
