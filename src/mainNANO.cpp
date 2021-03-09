@@ -53,7 +53,7 @@ bool trigger;
 unsigned char B0_state, B1_state, B2_state;
 
 /* === MODULE VARIABLES === */
-bool init_module0_clock, init_module1_clock, init_module2_clock, init_module3_clock, init_module4_clock, init_module5_clock, init_module6_clock, init_module7_clock, init_module8_clock;
+bool init_module0_clock, init_module1_clock, init_module2_clock, init_module3_clock, init_module4_clock, init_module5_clock, init_module6_clock, init_module8_clock, init_module9_clock;
 
 /* === MPU VARIABLES === */
 int AcX, AcY, AcZ;
@@ -68,6 +68,10 @@ int heartBeatTime, heartBeatState;
 /* === 7-SEGMENT VARIABLES === */
 byte displayOutput;
 
+/* === TRAFFIC LIGHTS MANAGER VARIABLES === */
+int trafficLightsStateEQ;
+unsigned long trafficLightsTimeStampEQ;
+
 /* === LED VARIABLES === */
 int brightness, fadeValue, amberBrightness, i;
 
@@ -81,6 +85,7 @@ void mpuWakeUp();
 void heartBeat();
 void displayUpdate(byte eightBits);
 byte numToBits(int number);
+void trafficLightsEQ();
 //void requestEvent();
 
 
@@ -116,8 +121,8 @@ void setup() {
   init_module4_clock = true; // LED_GREEN_1 MANAGER
   init_module5_clock = true; // SCHEDULER
   init_module6_clock = true; // TRAFFIC LIGHTS DANGER INDICATOR
-  init_module7_clock = true; // HEARTBEAT MANAGER
   init_module8_clock = true; // DISPLAY MANAGER
+  init_module9_clock = true; // TRAFFIC LIGHTS MANAGER
 
   /* === BUTTON SETUP === */
   B0_state = notPRESSED;
@@ -144,6 +149,9 @@ void setup() {
 
   /* === DISPLAY SETUP === */
   //displayOutput = B00111110;
+
+  /* === TRAFFIC LIGHTS MANAGER SETUP === */
+  trafficLightsStateEQ = 0;
 
   /* === SERIAL MONITOR SETUP === */
   Serial.begin(9600);
@@ -740,56 +748,62 @@ void loop() {
 
     if (module_doStep) {
       switch(state) {
-        case 0:   // MODULE 3 (3-COLOR-MODE) OFF, MODULE 4 (FRUIT MACHINE) OFF, WAITING FOR THE BUTTON TO BE PRESSED
-          init_module3_clock = true;
-          init_module4_clock = true;
+        case 0:   // MODULE 3 (3-COLOR-MODE) OFF, MODULE 4 (FRUIT MACHINE) OFF, MODULE 9 OFF, WAITING FOR THE BUTTON TO BE PRESSED
+          init_module3_clock = true; // 3-COLOR
+          init_module4_clock = true; // FRUIT MACHINE
+          init_module9_clock = true; // TRAFFIC LIGHTS EQ
           if (B1_state == normalPRESS)
           {
             state = 1;
           }
           break;
           
-        case 1:   // MODULE 3 (3-COLOR-MODE) OFF, MODULE 4 (FRUIT MACHINE) OFF, WAITING FOR THE BUTTON TO BE RELEASED
+        case 1:   // MODULE 3 (3-COLOR-MODE) OFF, MODULE 4 (FRUIT MACHINE) OFF, MODULE 9 OFF WAITING FOR THE BUTTON TO BE RELEASED
           init_module3_clock = true;            
           init_module4_clock = true;
+          init_module9_clock = true; // TRAFFIC LIGHTS EQ
           if (B1_state == notPRESSED) {
             state = 2;           
           }
           break;
 
-        case 2:   // MODULE 3 ON, MODULE 4 OFF, WAITING FOR THE BUTTON TO BE PRESSED
+        case 2:   // MODULE 3 ON, MODULE 4 OFF, MODULE 9 ON, WAITING FOR THE BUTTON TO BE PRESSED
           init_module3_clock = false;
           init_module4_clock = true;
+          init_module9_clock = false; // TRAFFIC LIGHTS EQ
           if (B1_state == normalPRESS) {
             state = 3;           
           }
           break;
             
-        case 3:   // MODULE 3 ON, MODULE 4 OFF, WAITING FOR THE BUTTON TO BE RELEASED
+        case 3:   // MODULE 3 ON, MODULE 4 OFF, MODULE 9 ON, WAITING FOR THE BUTTON TO BE RELEASED
           init_module3_clock = false;
           init_module4_clock = true;
+          init_module9_clock = false; // TRAFFIC LIGHTS EQ
           if (B1_state == notPRESSED) {
             state = 4;           
           }
           break;
 
-        case 4:   // MODULE 3 OFF, MODULE 4 ON, WAITING FOR THE BUTTON TO BE PRESSED
+        case 4:   // MODULE 3 OFF, MODULE 4 ON, MODULE 9 OFF, WAITING FOR THE BUTTON TO BE PRESSED
           init_module3_clock = true;
           init_module4_clock = false;
+          init_module9_clock = true; // TRAFFIC LIGHTS EQ
           if (B1_state == normalPRESS) {
             state = 5;           
           }
           break;
             
-        case 5:   // MODULE 3 OFF, MODULE 4 ON, WAITING FOR THE BUTTON TO BE RELEASED
+        case 5:   // MODULE 3 OFF, MODULE 4 ON, MODULE 9 OFF, WAITING FOR THE BUTTON TO BE RELEASED
           init_module3_clock = true;
           init_module4_clock = false;
+          init_module9_clock = true; // TRAFFIC LIGHTS EQ
           if (B1_state == notPRESSED) {
             state = 0; // STATE 0, MUST BE CHANGED TO 6 FOR OTHER MODULES TO WORK !!!  
           }
           break;
 
-        /*case 6:   // MODULE 3 ON, MODULE 4 ON, WAITING FOR THE BUTTON TO BE PRESSED
+        /*case 6:   // MODULE 9 ON, MODULE 4 ON, WAITING FOR THE BUTTON TO BE PRESSED
           init_module3_clock = false;
           init_module4_clock = false;
           if (B1_state == normalPRESS) {
@@ -887,10 +901,10 @@ void loop() {
 
   /* === MODULE 7 - HEARTBEAT MANAGER === */
   {
-    static unsigned long module_time = millis() ,  module_delay=500;
+    static unsigned long module_time = millis(), module_delay = 500;
     
       if (((unsigned long)(millis() - module_time)) > module_delay) {
-        module_time += module_delay; 
+        module_time += module_delay;
         heartBeat();
       }
   }
@@ -920,7 +934,39 @@ void loop() {
     }
   }
 
+  /* === MODULE 9 - TRAFFIC LIGHTS MANAGER === */
+  {
+    static unsigned long module_time, module_delay;
+    static bool module_doStep;
+    //unsigned long timeStamp;
+    
+    if (init_module9_clock) {
+      module_delay = 5;
+      module_time = millis();
+      module_doStep = false;
+      trafficLightsStateEQ = 0;
+      trafficLightsTimeStampEQ = millis();
+      //firstTime = true;
+      init_module9_clock = false;
+    }
+    else {
+      unsigned long m = millis();
+      if (((unsigned long)(m - module_time)) > module_delay) {
+        module_time = m; 
+        module_doStep = true;
+      }
+      else module_doStep = false;
+    }
+
+    if (module_doStep) {
+      //Serial.println(firstTime);
+      trafficLightsEQ();
+      Serial.println(trafficLightsStateEQ);
+    }
+  }
+
 }
+
 
 
 /* === FUNCTIONS === */
@@ -1023,6 +1069,139 @@ void heartBeat() {
       displayOutput &= B00000000;
       displayUpdate(displayOutput);
       heartBeatState = 0;
+      break;
+  }
+}
+
+void trafficLightsEQ() {
+
+  switch(trafficLightsStateEQ) {
+    case 0: // STARTUP PHASE
+      if(((long)(millis() - trafficLightsTimeStampEQ)) < 2000) {
+        trafficLightsStateEQ = 0;
+        digitalWrite(LED_YELLOW_1, HIGH);
+        digitalWrite(LED_YELLOW_2, HIGH);
+      }
+      else {
+        digitalWrite(LED_YELLOW_1, LOW);
+        digitalWrite(LED_YELLOW_2, LOW);
+        trafficLightsTimeStampEQ = millis();
+        trafficLightsStateEQ = 1;
+      }
+      break;
+
+    case 1: // STATE 1 (1 - R; 2 - R)
+      if(((long)(millis() - trafficLightsTimeStampEQ)) < 1000) {
+        Serial.println(trafficLightsTimeStampEQ);
+        trafficLightsStateEQ = 1;
+        digitalWrite(LED_RED_1, HIGH);
+        digitalWrite(LED_RED_2, HIGH);
+      }
+      else {
+        trafficLightsStateEQ = 2;
+        trafficLightsTimeStampEQ = millis();
+      }
+      break;
+
+    case 2: // STATE 2 (1 - RY; 2 - R)
+      if(((long)(millis() - trafficLightsTimeStampEQ)) < 1000) {
+        trafficLightsStateEQ = 2;
+        digitalWrite(LED_RED_1, HIGH);
+        digitalWrite(LED_YELLOW_1, HIGH);
+
+        digitalWrite(LED_RED_2, HIGH);
+      }
+      else {
+        trafficLightsStateEQ = 3;
+        digitalWrite(LED_RED_1, LOW);
+        digitalWrite(LED_YELLOW_1, LOW);
+        trafficLightsTimeStampEQ = millis();
+      }
+      break;
+    
+    case 3: // STATE 3 (1 - G; 2 - R)
+      if(((long)(millis() - trafficLightsTimeStampEQ)) < 4000) {
+        trafficLightsStateEQ = 3;
+        digitalWrite(LED_GREEN_1, HIGH);
+
+        digitalWrite(LED_RED_2, HIGH);
+      }
+      else {
+        digitalWrite(LED_GREEN_1, LOW);
+        trafficLightsStateEQ = 4;
+        trafficLightsTimeStampEQ = millis();
+      }
+      break;
+
+    case 4: // STATE 4 (1 - Y; 2 - R)
+      if(((long)(millis() - trafficLightsTimeStampEQ)) < 1000) {
+        trafficLightsStateEQ = 4;
+        digitalWrite(LED_YELLOW_1, HIGH);
+
+        digitalWrite(LED_RED_2, HIGH);
+      }
+      else {
+        digitalWrite(LED_YELLOW_1, LOW);
+        trafficLightsStateEQ = 5;
+        trafficLightsTimeStampEQ = millis();
+      }
+      break;
+
+    case 5: // STATE 5 (1 - R, 2 - R)
+      if(((long)(millis() - trafficLightsTimeStampEQ)) < 1000) {
+        trafficLightsStateEQ = 5;
+        digitalWrite(LED_RED_1, HIGH);
+
+        digitalWrite(LED_RED_2, HIGH);
+      }
+      else {
+        trafficLightsStateEQ = 6;
+        trafficLightsTimeStampEQ = millis();
+      }
+      break;
+
+    case 6: // STATE 6 (1 - R; 2 - RY)
+      if(((long)(millis() - trafficLightsTimeStampEQ)) < 1000) {
+        trafficLightsStateEQ = 6;
+        digitalWrite(LED_RED_1, HIGH);
+
+        digitalWrite(LED_RED_2, HIGH);
+        digitalWrite(LED_YELLOW_2, HIGH);
+      }
+      else {
+        digitalWrite(LED_RED_2, LOW);
+        digitalWrite(LED_YELLOW_2, LOW);
+        trafficLightsStateEQ = 7;
+        trafficLightsTimeStampEQ = millis();
+      }
+      break;
+
+    case 7: // STATE 7 (1 - R; 2 - G)
+      if(((long)(millis() - trafficLightsTimeStampEQ)) < 4000) {
+        trafficLightsStateEQ = 7;
+        digitalWrite(LED_RED_1, HIGH);
+
+        digitalWrite(LED_GREEN_2, HIGH);
+      }
+      else {
+        digitalWrite(LED_GREEN_2, LOW);
+        trafficLightsStateEQ = 8;
+        trafficLightsTimeStampEQ = millis();
+      }
+      break;
+    
+    case 8: // STATE 8 (1 - R; 2 - Y)
+      if(((long)(millis() - trafficLightsTimeStampEQ)) < 1000) {
+        trafficLightsStateEQ = 8;
+        digitalWrite(LED_RED_1, HIGH);
+
+        digitalWrite(LED_YELLOW_2, HIGH);
+      }
+      else {
+        digitalWrite(LED_YELLOW_2, LOW);
+        trafficLightsStateEQ = 1;
+        trafficLightsTimeStampEQ = millis();
+      }
       break;
   }
 }
