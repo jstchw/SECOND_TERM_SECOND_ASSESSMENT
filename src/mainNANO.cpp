@@ -963,10 +963,11 @@ void loop() {
     }
 
     if (module_doStep) {
+      // THE DISPLAY DOESN'T WORK PROPERLY BUT IT'S FOR DEBUG PURPOSES SO IT'S FINE, SEQUENCES WORK FINE BUT STILL EVERY ALREADY RUNNING SEQUENCE MUST FINISH BEFORE A NEW ONE STARTS
       switch(state) {
         case 0: // EQ
           displayOutput |= B11101110;
-          displayUpdate(displayOutput);
+          //displayUpdate(displayOutput);
 
           b_trafficLightsEQ = true; // EQUAL MODE
           b_trafficLights1P = false; // 1 SET PRIORITY MODE
@@ -978,7 +979,7 @@ void loop() {
 
         case 1: // EQ
           displayOutput |= B11101110;
-          displayUpdate(displayOutput);
+          //displayUpdate(displayOutput);
 
           b_trafficLightsEQ = true; // EQUAL MODE
           b_trafficLights1P = false; // 1 SET PRIORITY MODE
@@ -990,7 +991,7 @@ void loop() {
 
         case 2: // SET 1 PRIORITY
           displayOutput |= B00111110;
-          displayUpdate(displayOutput);
+          //displayUpdate(displayOutput);
 
           b_trafficLightsEQ = false; // EQUAL MODE
           b_trafficLights1P = true; // 1 SET PRIORITY MODE
@@ -1002,7 +1003,7 @@ void loop() {
 
         case 3: // SET 1 PRIORITY
           displayOutput |= B00111110;
-          displayUpdate(displayOutput);
+          //displayUpdate(displayOutput);
 
           b_trafficLightsEQ = false; // EQUAL MODE
           b_trafficLights1P = true; // 1 SET PRIORITY MODE
@@ -1014,7 +1015,7 @@ void loop() {
 
         case 4: // SET 2 PRIORITY
           displayOutput |= B10011100;
-          displayUpdate(displayOutput);
+          //displayUpdate(displayOutput);
           
           b_trafficLightsEQ = false; // EQUAL MODE
           b_trafficLights1P = false; // 1 SET PRIORITY MODE
@@ -1026,7 +1027,6 @@ void loop() {
 
         case 5: // SET 2 PRIORITY
           displayOutput |= B10011100;
-          displayUpdate(displayOutput);
 
           b_trafficLightsEQ = false; // EQUAL MODE
           b_trafficLights1P = false; // 1 SET PRIORITY MODE
@@ -1037,6 +1037,7 @@ void loop() {
           break;
       }
 
+      displayUpdate(displayOutput);
       trafficLightsEQ();
     }
   }
