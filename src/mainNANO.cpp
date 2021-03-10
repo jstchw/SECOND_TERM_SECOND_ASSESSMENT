@@ -74,7 +74,8 @@ unsigned long trafficLightsTimeStampEQ, trafficLightsTimeStamp1P, trafficLightsT
 bool b_trafficLightsEQ, b_trafficLights1P, b_trafficLights2P;
 
 /* === LED VARIABLES === */
-int brightness, fadeValue, amberBrightness, i;
+float brightness, fadeValue, fadeValueAmber, amberBrightness;
+int i, j;
 
 /* === FUNCTION PROTOTYPES === */
 bool demandRequest();
@@ -143,8 +144,10 @@ void setup() {
   /* === LED SETUP === */
   brightness = 0;
   fadeValue = 1;
+  fadeValueAmber = 0.0588;
   amberBrightness = 0;
   i = 0;
+  j = 0;
 
   /* === HEARTBEAT SETUP === */
   heartBeatTime = 500; // Setting the heartbeat delay to 500ms
@@ -415,133 +418,99 @@ void loop() {
           }
           break;
         case 2: // AMBER (WORKS DECENT ENOUGH BUT NEEDS SOME TWEAKING) // SOMEWHAT DONE
-          if(firstTime) {
-            if (brightness < 191) {
-              amberBrightness = brightness;
-            }
-            else if (brightness > 191) {
-              amberBrightness = 191;
-            }
-            firstTime = false;
-          }
-          analogWrite(LED_TRI_R, brightness);
-          digitalWrite(LED_TRI_B, LOW);
-          analogWrite(LED_TRI_G, amberBrightness);
-          brightness = brightness + fadeValue;
-          Serial.println(amberBrightness);
 
           switch(i) {
             case 0:
-              if(amberBrightness < 191) {
-                amberBrightness = amberBrightness + fadeValue;
-              }
-              else {
+              analogWrite(LED_TRI_R, brightness);
+              analogWrite(LED_TRI_B, 0);
+              brightness = brightness + fadeValue;
+
+              if(brightness <= 0 || brightness >= 255) {
                 i = 1;
               }
-              break;
+            break;
+
             case 1:
-              if(brightness == 191) {
-                i = 2;
-              }
-              else {
-                i = 1;
-              }
-              break;
-            case 2:
-              if(amberBrightness > 0) {
-                amberBrightness = amberBrightness + fadeValue;
-              }
-              else {
-                i = 0;
-              }
-              break;
-            case 3:
-              if(brightness == 0) {
-                i = 0;
-              }
-              else {
-                i = 3;
-              }
-              break;
+              fadeValue = -fadeValue;
+              i = 0;
+            break;
           }
 
-          if(brightness == 0 || brightness == 255) {
-            fadeValue = -fadeValue;
+          switch(j) {
+            case 0:
+              analogWrite(LED_TRI_G, amberBrightness);
+              analogWrite(LED_TRI_B, 0);
+              amberBrightness = amberBrightness + fadeValueAmber;
+
+              if(amberBrightness <= 0 || amberBrightness >= 15) {
+                j = 1;
+              }
+            break;
+
+            case 1:
+              fadeValueAmber = -fadeValueAmber;
+              j = 0;
+            break;
           }
 
           if(B0_state == normalPRESS) {
             state = 3;
-            firstTime = true;
           }
-          break;
+
+        break;
+        
 
         case 3: // AMBER (WORKS DECENT ENOUGH BUT NEEDS SOME TWEAKING)
-          if(firstTime) {
-            if (brightness < 191) {
-              amberBrightness = brightness;
-            }
-            else if (brightness > 191) {
-              amberBrightness = 191;
-            }
-            firstTime = false;
-          }
-
-          analogWrite(LED_TRI_R, brightness);
-          digitalWrite(LED_TRI_B, LOW);
-          analogWrite(LED_TRI_G, amberBrightness);
-          brightness = brightness + fadeValue;
-
           switch(i) {
             case 0:
-              if(amberBrightness < 191) {
-                amberBrightness = amberBrightness + fadeValue;
-              }
-              else {
+              analogWrite(LED_TRI_R, brightness);
+              analogWrite(LED_TRI_B, 0);
+              brightness = brightness + fadeValue;
+
+              if(brightness <= 0 || brightness >= 255) {
                 i = 1;
               }
-              break;
+            break;
+
             case 1:
-              if(brightness == 191) {
-                i = 2;
-              }
-              else {
-                i = 1;
-              }
-              break;
-            case 2:
-              if(amberBrightness > 0) {
-                amberBrightness = amberBrightness + fadeValue;
-              }
-              else {
-                i = 0;
-              }
-              break;
-            case 3:
-              if(brightness == 0) {
-                i = 0;
-              }
-              else {
-                i = 3;
-              }
-              break;
+              fadeValue = -fadeValue;
+              i = 0;
+            break;
           }
 
-          if(brightness == 0 || brightness == 255) {
-            fadeValue = -fadeValue;
+          switch(j) {
+            case 0:
+              analogWrite(LED_TRI_G, amberBrightness);
+              analogWrite(LED_TRI_B, 0);
+              amberBrightness = amberBrightness + fadeValueAmber;
+
+              if(amberBrightness <= 0 || amberBrightness >= 15) {
+                j = 1;
+              }
+            break;
+
+            case 1:
+              fadeValueAmber = -fadeValueAmber;
+              j = 0;
+            break;
           }
 
           if(B0_state == notPRESSED) {
             state = 4;
           }
-          break;
+        break;
         case 4: // BLUE
           digitalWrite(LED_TRI_R, LOW);
           digitalWrite(LED_TRI_G, LOW);
           analogWrite(LED_TRI_B, brightness);
           brightness = brightness + fadeValue;
+          amberBrightness = amberBrightness + fadeValueAmber;
 
-          if(brightness == 0 || brightness == 255) {
+          if(brightness <= 0 || brightness >= 255) {
             fadeValue = -fadeValue;
+          }
+          if(amberBrightness <= 0 || amberBrightness >= 15) {
+            fadeValueAmber = -fadeValueAmber;
           }
 
           if(B0_state == normalPRESS) {
@@ -554,9 +523,13 @@ void loop() {
           digitalWrite(LED_TRI_G, LOW);
           analogWrite(LED_TRI_B, brightness);
           brightness = brightness + fadeValue;
+          amberBrightness = amberBrightness + fadeValueAmber;
 
-          if(brightness == 0 || brightness == 255) {
+          if(brightness <= 0 || brightness >= 255) {
             fadeValue = -fadeValue;
+          }
+          if(amberBrightness <= 0 || amberBrightness >= 15) {
+            fadeValueAmber = -fadeValueAmber;
           }
 
           if(B0_state == notPRESSED) {
@@ -568,9 +541,13 @@ void loop() {
           digitalWrite(LED_TRI_B, LOW);
           analogWrite(LED_TRI_G, brightness);
           brightness = brightness + fadeValue;
+          amberBrightness = amberBrightness + fadeValueAmber;
 
-          if(brightness == 0 || brightness == 255) {
+          if(brightness <= 0 || brightness >= 255) {
             fadeValue = -fadeValue;
+          }
+          if(amberBrightness <= 0 || amberBrightness >= 15) {
+            fadeValueAmber = -fadeValueAmber;
           }
 
           if(B0_state == normalPRESS) {
@@ -583,9 +560,13 @@ void loop() {
           digitalWrite(LED_TRI_B, LOW);
           analogWrite(LED_TRI_G, brightness);
           brightness = brightness + fadeValue;
+          amberBrightness = amberBrightness + fadeValueAmber;
 
-          if(brightness == 0 || brightness == 255) {
+          if(brightness <= 0 || brightness >= 255) {
             fadeValue = -fadeValue;
+          }
+          if(amberBrightness <= 0 || amberBrightness >= 15) {
+            fadeValueAmber = -fadeValueAmber;
           }
 
           if(B0_state == notPRESSED) {
@@ -597,9 +578,13 @@ void loop() {
           digitalWrite(LED_TRI_B, LOW);
           analogWrite(LED_TRI_R, brightness);
           brightness = brightness + fadeValue;
+          amberBrightness = amberBrightness + fadeValueAmber;
 
-          if(brightness == 0 || brightness == 255) {
+          if(brightness <= 0 || brightness >= 255) {
             fadeValue = -fadeValue;
+          }
+          if(amberBrightness <= 0 || amberBrightness >= 15) {
+            fadeValueAmber = -fadeValueAmber;
           }
 
           if(B0_state == normalPRESS) {
@@ -612,9 +597,13 @@ void loop() {
           digitalWrite(LED_TRI_B, LOW);
           analogWrite(LED_TRI_R, brightness);
           brightness = brightness + fadeValue;
+          amberBrightness = amberBrightness + fadeValueAmber;
 
-          if(brightness == 0 || brightness == 255) {
+          if(brightness <= 0 || brightness >= 255) {
             fadeValue = -fadeValue;
+          }
+          if(amberBrightness <= 0 || amberBrightness >= 15) {
+            fadeValueAmber = -fadeValueAmber;
           }
 
           if(B0_state == notPRESSED) {
