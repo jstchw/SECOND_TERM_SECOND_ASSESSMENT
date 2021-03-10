@@ -69,8 +69,9 @@ int heartBeatTime, heartBeatState;
 byte displayOutput;
 
 /* === TRAFFIC LIGHTS MANAGER VARIABLES === */
-int trafficLightsStateEQ;
-unsigned long trafficLightsTimeStampEQ;
+int trafficLightsStateEQ, trafficLightsState1P, trafficLightsState2P;
+unsigned long trafficLightsTimeStampEQ, trafficLightsTimeStamp1P, trafficLightsTimeStamp2P;
+bool b_trafficLightsEQ, b_trafficLights1P, b_trafficLights2P;
 
 /* === LED VARIABLES === */
 int brightness, fadeValue, amberBrightness, i;
@@ -86,6 +87,8 @@ void heartBeat();
 void displayUpdate(byte eightBits);
 byte numToBits(int number);
 void trafficLightsEQ();
+//void trafficLights1P();
+//void trafficLights2P();
 //void requestEvent();
 
 
@@ -938,15 +941,16 @@ void loop() {
   {
     static unsigned long module_time, module_delay;
     static bool module_doStep;
+    static int state;
     //unsigned long timeStamp;
     
     if (init_module9_clock) {
       module_delay = 5;
       module_time = millis();
       module_doStep = false;
+      state = 0;
       trafficLightsStateEQ = 0;
       trafficLightsTimeStampEQ = millis();
-      //firstTime = true;
       init_module9_clock = false;
     }
     else {
@@ -959,9 +963,81 @@ void loop() {
     }
 
     if (module_doStep) {
-      //Serial.println(firstTime);
+      switch(state) {
+        case 0: // EQ
+          displayOutput |= B11101110;
+          displayUpdate(displayOutput);
+
+          b_trafficLightsEQ = true; // EQUAL MODE
+          b_trafficLights1P = false; // 1 SET PRIORITY MODE
+          b_trafficLights2P = false; // 2 SET PRIORITY MODE
+          if(B2_state == normalPRESS) {
+            state = 1;
+          }
+          break;
+
+        case 1: // EQ
+          displayOutput |= B11101110;
+          displayUpdate(displayOutput);
+
+          b_trafficLightsEQ = true; // EQUAL MODE
+          b_trafficLights1P = false; // 1 SET PRIORITY MODE
+          b_trafficLights2P = false; // 2 SET PRIORITY MODE
+          if(B2_state == notPRESSED) {
+            state = 2;
+          }
+          break;
+
+        case 2: // SET 1 PRIORITY
+          displayOutput |= B00111110;
+          displayUpdate(displayOutput);
+
+          b_trafficLightsEQ = false; // EQUAL MODE
+          b_trafficLights1P = true; // 1 SET PRIORITY MODE
+          b_trafficLights2P = false; // 2 SET PRIORITY MODE
+          if(B2_state == normalPRESS) {
+            state = 3;
+          }
+          break;
+
+        case 3: // SET 1 PRIORITY
+          displayOutput |= B00111110;
+          displayUpdate(displayOutput);
+
+          b_trafficLightsEQ = false; // EQUAL MODE
+          b_trafficLights1P = true; // 1 SET PRIORITY MODE
+          b_trafficLights2P = false; // 2 SET PRIORITY MODE
+          if(B2_state == notPRESSED) {
+            state = 4;
+          }
+          break;
+
+        case 4: // SET 2 PRIORITY
+          displayOutput |= B10011100;
+          displayUpdate(displayOutput);
+          
+          b_trafficLightsEQ = false; // EQUAL MODE
+          b_trafficLights1P = false; // 1 SET PRIORITY MODE
+          b_trafficLights2P = true; // 2 SET PRIORITY MODE
+          if(B2_state == normalPRESS) {
+            state = 5;
+          }
+          break;
+
+        case 5: // SET 2 PRIORITY
+          displayOutput |= B10011100;
+          displayUpdate(displayOutput);
+
+          b_trafficLightsEQ = false; // EQUAL MODE
+          b_trafficLights1P = false; // 1 SET PRIORITY MODE
+          b_trafficLights2P = true; // 2 SET PRIORITY MODE
+          if(B2_state == notPRESSED) {
+            state = 0;
+          }
+          break;
+      }
+
       trafficLightsEQ();
-      Serial.println(trafficLightsStateEQ);
     }
   }
 
@@ -1120,17 +1196,51 @@ void trafficLightsEQ() {
       break;
     
     case 3: // STATE 3 (1 - G; 2 - R)
-      if(((long)(millis() - trafficLightsTimeStampEQ)) < 4000) {
-        trafficLightsStateEQ = 3;
-        digitalWrite(LED_GREEN_1, HIGH);
+      // IF TRAFFIC LIGHTS EQUAL
+      if(b_trafficLightsEQ) {
+        if(((long)(millis() - trafficLightsTimeStampEQ)) < 4000) {
+          trafficLightsStateEQ = 3;
+          digitalWrite(LED_GREEN_1, HIGH);
 
-        digitalWrite(LED_RED_2, HIGH);
+          digitalWrite(LED_RED_2, HIGH);
+        }
+        else {
+          digitalWrite(LED_GREEN_1, LOW);
+          trafficLightsStateEQ = 4;
+          trafficLightsTimeStampEQ = millis();
+        }
       }
-      else {
-        digitalWrite(LED_GREEN_1, LOW);
-        trafficLightsStateEQ = 4;
-        trafficLightsTimeStampEQ = millis();
+      
+      // IF TRAFFIC LIGHTS IN SET 1 PRIORITY MODE
+      else if(b_trafficLights1P) {
+        if(((long)(millis() - trafficLightsTimeStampEQ)) < 6000) {
+          trafficLightsStateEQ = 3;
+          digitalWrite(LED_GREEN_1, HIGH);
+
+          digitalWrite(LED_RED_2, HIGH);
+        }
+        else {
+          digitalWrite(LED_GREEN_1, LOW);
+          trafficLightsStateEQ = 4;
+          trafficLightsTimeStampEQ = millis();
+        }
       }
+
+      else if(b_trafficLights2P) {
+        if(((long)(millis() - trafficLightsTimeStampEQ)) < 2000) {
+          trafficLightsStateEQ = 3;
+          digitalWrite(LED_GREEN_1, HIGH);
+
+          digitalWrite(LED_RED_2, HIGH);
+        }
+        else {
+          digitalWrite(LED_GREEN_1, LOW);
+          trafficLightsStateEQ = 4;
+          trafficLightsTimeStampEQ = millis();
+        }
+      }
+
+
       break;
 
     case 4: // STATE 4 (1 - Y; 2 - R)
@@ -1177,17 +1287,50 @@ void trafficLightsEQ() {
       break;
 
     case 7: // STATE 7 (1 - R; 2 - G)
-      if(((long)(millis() - trafficLightsTimeStampEQ)) < 4000) {
-        trafficLightsStateEQ = 7;
-        digitalWrite(LED_RED_1, HIGH);
 
-        digitalWrite(LED_GREEN_2, HIGH);
+      // IF EQUAL PRIORITY
+      if(b_trafficLightsEQ) {
+        if(((long)(millis() - trafficLightsTimeStampEQ)) < 4000) {
+          trafficLightsStateEQ = 7;
+          digitalWrite(LED_RED_1, HIGH);
+
+          digitalWrite(LED_GREEN_2, HIGH);
+        }
+        else {
+          digitalWrite(LED_GREEN_2, LOW);
+          trafficLightsStateEQ = 8;
+          trafficLightsTimeStampEQ = millis();
+        }
       }
-      else {
-        digitalWrite(LED_GREEN_2, LOW);
-        trafficLightsStateEQ = 8;
-        trafficLightsTimeStampEQ = millis();
+      // IF SET 1 PRIORITY
+      else if(b_trafficLights1P) {
+        if(((long)(millis() - trafficLightsTimeStampEQ)) < 2000) {
+          trafficLightsStateEQ = 7;
+          digitalWrite(LED_RED_1, HIGH);
+
+          digitalWrite(LED_GREEN_2, HIGH);
+        }
+        else {
+          digitalWrite(LED_GREEN_2, LOW);
+          trafficLightsStateEQ = 8;
+          trafficLightsTimeStampEQ = millis();
+        }
       }
+      // IF SET 2 PRIORITY
+      else if(b_trafficLights2P) {
+        if(((long)(millis() - trafficLightsTimeStampEQ)) < 6000) {
+          trafficLightsStateEQ = 7;
+          digitalWrite(LED_RED_1, HIGH);
+
+          digitalWrite(LED_GREEN_2, HIGH);
+        }
+        else {
+          digitalWrite(LED_GREEN_2, LOW);
+          trafficLightsStateEQ = 8;
+          trafficLightsTimeStampEQ = millis();
+        }
+      }
+  
       break;
     
     case 8: // STATE 8 (1 - R; 2 - Y)
