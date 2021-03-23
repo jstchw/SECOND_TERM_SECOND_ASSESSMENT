@@ -90,7 +90,7 @@ byte numToBits(int number);
 void trafficLightsEQ();
 //void trafficLights1P();
 //void trafficLights2P();
-//void requestEvent();
+void requestEvent();
 
 
 void setup() {
@@ -164,6 +164,7 @@ void setup() {
 
   /* === WIRE LIB SETUP === */
   Wire.begin(8);
+  Wire.onRequest(requestEvent);
   //Wire.onRequest(requestEvent());
 }
 
@@ -1337,6 +1338,10 @@ void trafficLightsEQ() {
       }
       break;
   }
+}
+
+void requestEvent() {
+  
 }
 
 void displayUpdate(byte eightBits) {

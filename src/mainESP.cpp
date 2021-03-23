@@ -39,7 +39,9 @@ bool granted();
 void leaveHigh(unsigned char pin);
 void pullLow(unsigned char pin);
 void handleRoot();
+void handleSubmit();
 void redirectHTTPS();
+void sendData(String arg);
 
 void setup() {
   /* === RESOURCE MANAGER SETUP === */
@@ -58,9 +60,11 @@ void setup() {
   /* === WEB SETUP === */
   WiFi.softAP(ssid, password);
 
+  // SECURE SERVER NORMAL MODE
   serverHTTPS.on("/", handleRoot);
   serverHTTPS.begin();
 
+  // INSECURE SERVER REDIRECT MODE
   serverHTTP.on("/", redirectHTTPS);
   serverHTTP.begin();
 
@@ -227,9 +231,37 @@ void pullLow (unsigned char pin) {
 /* === WEB FUNCTIONS === */
 
 void handleRoot() {
-  serverHTTPS.send(200, "text/html", INDEX_HTML);
-  status_code = 1;
+  if(serverHTTPS.hasArg("traffic")) {
+    handleSubmit();
+  }
+  else {
+    serverHTTPS.send(200, "text/html", INDEX_HTML);
+  }
 }
+
+void handleSubmit() {
+  String arg;
+
+  if(!serverHTTPS.hasArg("traffic") && serverHTTPS.hasArg("fruit")) {
+    return;
+  }
+  else if(serverHTTPS.hasArg("traffic")) {
+    arg = serverHTTPS.arg("traffic");
+  }
+
+  sendData(arg);
+}
+
+void sendData(String arg) {
+  Wire.beginTransmission(8);
+  if(arg == "a") Wire.write('a');
+  if(arg == "b") Wire.write('b');
+  if(arg == "c") Wire.write('c');
+
+  Wire.endTransmission();
+}
+
+
 
 void redirectHTTPS() {
   serverHTTP.sendHeader("Location", String("https://") + ipaddr.toString(), true);

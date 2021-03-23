@@ -2,16 +2,69 @@
 #include <Arduino.h>
 
 static const char INDEX_HTML[] PROGMEM = R"EOF(
-<HTML>
-<HEAD>
-<TITLE>My first web page</TITLE>
-</HEAD>
-<BODY>
-<CENTER>
-<B>Hello World.... </B>
-</CENTER>	
-</BODY>
-</HTML>
+<html>
+    <head>
+        <title>ESP8266 - Control Panel</title>
+        <style>
+            body {
+                width: 100wh;
+                height: 90vh;
+                color: #fff;
+                background: linear-gradient(-45deg, #990d81, #E73C7E, #23A6D5, #23D5AB, #74ef70);
+                background-size: 400% 400%;
+                -webkit-animation: Gradient 10s ease infinite;
+                -moz-animation: Gradient 10s ease infinite;
+                animation: Gradient 10s ease infinite;
+                font-family: 'Trebuchet MS', Sans-serif;
+                font-size: 1.4em;
+                background-attachment: fixed;
+            }
+
+            @keyframes Gradient {
+                0% {
+                    background-position: 0% 50%
+                }
+                50% {
+                    background-position: 100% 50%
+                }
+                100% {
+                    background-position: 0% 50%
+                }
+            }
+
+            .box {
+                margin: auto;
+                text-align: center;
+                /*border: 1px solid black;*/
+                border-radius: 10px;
+                width: 30%;
+                padding: 1%;
+                background: rgba(0,0,0,.7);
+                box-shadow: 2px 3px 4px rgba(0,0,0,.5);
+            }
+
+            #content {
+               margin-top: 1%;
+            }
+
+            .button {
+                margin: 3%;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class=box id=title>Control Panel</div>
+        <div class=box id=content>
+            <form action=/ method="POST">
+                <div><input type=radio name="traffic" value="a">Traffic Lights Equal Priority</div>
+                <div><input type=radio name="traffic" value="b">Traffic Lights Set 1 Priority</div>
+                <div><input type=radio name="traffic" value="c">Traffic Lights Set 2 Priority</div>
+                <div class="button"><input type=submit name="submit" value="Proceed"></div>
+            </form>
+        </div>
+    </body>
+</html>
 )EOF";
 
 static const char SERVER_CERT[] PROGMEM = R"EOF(
