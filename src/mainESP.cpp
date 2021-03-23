@@ -1,5 +1,17 @@
 #include <Arduino.h>
-#include <Wire.h>
+#include <Wire.h> // WIRE LIBRARY
+#include <WifiClient.h> // LIBRARY TO START THE AP
+#include <ESP8266WebServer.h> // LIBRARY TO START THE WEB SERVER
+#include <ESP8266WebServerSecure.h> // LIBRARY TO START THE SECURE WEB SERVER
+#include "espPages.h"
+
+/* === WEB PAGES === */
+const char* ssid = "Do not touch me";
+const char* password = "6zJS6GB5";
+int status_code;
+BearSSL::ESP8266WebServerSecure serverHTTPS(443);
+ESP8266WebServer serverHTTP(80);
+IPAddress ipaddr;
 
 /* === HANDSHAKING LINES MACROS === */
 #define DEMAND D1
@@ -26,6 +38,8 @@ bool init_module0_clock;
 bool granted();
 void leaveHigh(unsigned char pin);
 void pullLow(unsigned char pin);
+void handleRoot();
+void redirectHTTPS();
 
 void setup() {
   /* === RESOURCE MANAGER SETUP === */
@@ -40,6 +54,24 @@ void setup() {
 
   /* === LED SETUP === */
   pinMode(LED, OUTPUT);
+
+  /* === WEB SETUP === */
+  WiFi.softAP(ssid, password);
+
+  serverHTTPS.on("/", handleRoot);
+  serverHTTPS.begin();
+
+  serverHTTP.on("/", redirectHTTPS);
+  serverHTTP.begin();
+
+  status_code = 0;
+  ipaddr = WiFi.softAPIP();
+
+  // SSL CERTIFICATE
+  serverHTTPS.getServer().setRSACert(new BearSSL::X509List(SERVER_CERT), new BearSSL::PrivateKey(SERVER_KEY));
+
+  /* === OVERCLOCKING === */
+  system_update_cpu_freq(160);
 
   /* === SERIAL MONITOR SETUP === */
   Serial.begin(9600);
@@ -110,6 +142,7 @@ void loop() {
       module_doStep = false;
       init_module0_clock = false;
       state = 0;
+      timeStamp = 0;
     }
     else {
       unsigned long m = millis();
@@ -160,6 +193,21 @@ void loop() {
       }  
     }
   }
+
+  /* === MODULE 1 - WEB SERVER === */
+
+  {
+    static unsigned long module_time = millis(), module_delay = 0;
+    
+      if (((unsigned long)(millis() - module_time)) > module_delay) {
+        module_time += module_delay;
+
+        serverHTTPS.handleClient();
+        serverHTTP.handleClient();
+      }
+  }
+
+  
 }
 
 /* === FUNCTIONS === */
@@ -174,4 +222,16 @@ void leaveHigh (unsigned char pin) {
 void pullLow (unsigned char pin) {
   digitalWrite(pin, LOW);
   pinMode(pin, OUTPUT);
+}
+
+/* === WEB FUNCTIONS === */
+
+void handleRoot() {
+  serverHTTPS.send(200, "text/html", INDEX_HTML);
+  status_code = 1;
+}
+
+void redirectHTTPS() {
+  serverHTTP.sendHeader("Location", String("https://") + ipaddr.toString(), true);
+  serverHTTP.send(301, "text/plan", "");
 }
