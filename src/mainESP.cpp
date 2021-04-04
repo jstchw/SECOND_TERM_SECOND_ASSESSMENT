@@ -233,6 +233,7 @@ void pullLow (unsigned char pin) {
 void handleRoot() {
   if(serverHTTPS.hasArg("traffic")) {
     handleSubmit();
+    serverHTTPS.send(200, "text/html", INDEX_HTML);
   }
   else {
     serverHTTPS.send(200, "text/html", INDEX_HTML);
@@ -242,23 +243,24 @@ void handleRoot() {
 void handleSubmit() {
   String arg;
 
-  if(!serverHTTPS.hasArg("traffic") && serverHTTPS.hasArg("fruit")) {
+  if(!serverHTTPS.hasArg("traffic") && !serverHTTPS.hasArg("fruit")) {
     return;
   }
-  else if(serverHTTPS.hasArg("traffic")) {
-    arg = serverHTTPS.arg("traffic");
-  }
 
-  sendData(arg);
+  if(serverHTTPS.hasArg("traffic")) {
+    arg = serverHTTPS.arg("traffic");
+    sendData(arg);
+    arg.clear();
+  }
 }
 
 void sendData(String arg) {
   Wire.beginTransmission(8);
-  if(arg == "a") Wire.write('a');
-  if(arg == "b") Wire.write('b');
-  if(arg == "c") Wire.write('c');
-
-  Wire.endTransmission();
+  if(arg == "a") Wire.write(0x61);
+  else if(arg == "b") Wire.write(0x62);
+  else if(arg == "c") Wire.write(0x63);
+  Wire.endTransmission(true);
+  Serial.println("Arg sent");
 }
 
 
