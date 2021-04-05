@@ -405,7 +405,7 @@ void loop() {
       module_time = millis();
       module_doStep = false;
       init_module3_clock = false;
-      state = 0;
+      state = 0x0;
       //firstTime = true;
     }
     else {
@@ -418,26 +418,19 @@ void loop() {
     }
 
     if (module_doStep) {
+      for(int i = 0x65; i<=0x69; i++) {
+        if(arg == i) {
+          state = arg;
+        }
+      }
       switch(state) {
-        case 0: // OFF
+        case 0x65: // OFF
           digitalWrite(LED_TRI_R, LOW);
           digitalWrite(LED_TRI_G, LOW);
           digitalWrite(LED_TRI_B, LOW);
-          if(B0_state == normalPRESS) {
-            state = 1;
-            //firstTime = true;
-          }
           break;
 
-        case 1: // OFF
-          digitalWrite(LED_TRI_R, LOW);
-          digitalWrite(LED_TRI_G, LOW);
-          digitalWrite(LED_TRI_B, LOW);
-          if(B0_state == notPRESSED) {
-            state = 2;
-          }
-          break;
-        case 2: // AMBER (WORKS DECENT ENOUGH BUT NEEDS SOME TWEAKING) // SOMEWHAT DONE
+        case 0x66: // AMBER (WORKS DECENT ENOUGH BUT NEEDS SOME TWEAKING) // SOMEWHAT DONE
 
           switch(i) {
             case 0:
@@ -473,53 +466,9 @@ void loop() {
             break;
           }
 
-          if(B0_state == normalPRESS) {
-            state = 3;
-          }
+          break;
 
-        break;
-        
-
-        case 3: // AMBER (WORKS DECENT ENOUGH BUT NEEDS SOME TWEAKING)
-          switch(i) {
-            case 0:
-              analogWrite(LED_TRI_R, brightness);
-              analogWrite(LED_TRI_B, 0);
-              brightness = brightness + fadeValue;
-
-              if(brightness <= 0 || brightness >= 255) {
-                i = 1;
-              }
-            break;
-
-            case 1:
-              fadeValue = -fadeValue;
-              i = 0;
-            break;
-          }
-
-          switch(j) {
-            case 0:
-              analogWrite(LED_TRI_G, amberBrightness);
-              analogWrite(LED_TRI_B, 0);
-              amberBrightness = amberBrightness + fadeValueAmber;
-
-              if(amberBrightness <= 0 || amberBrightness >= 15) {
-                j = 1;
-              }
-            break;
-
-            case 1:
-              fadeValueAmber = -fadeValueAmber;
-              j = 0;
-            break;
-          }
-
-          if(B0_state == notPRESSED) {
-            state = 4;
-          }
-        break;
-        case 4: // BLUE
+        case 0x67: // BLUE
           digitalWrite(LED_TRI_R, LOW);
           digitalWrite(LED_TRI_G, LOW);
           analogWrite(LED_TRI_B, brightness);
@@ -532,31 +481,9 @@ void loop() {
           if(amberBrightness <= 0 || amberBrightness >= 15) {
             fadeValueAmber = -fadeValueAmber;
           }
-
-          if(B0_state == normalPRESS) {
-            state = 5;
-          }
           break;
 
-        case 5: // BLUE
-          digitalWrite(LED_TRI_R, LOW);
-          digitalWrite(LED_TRI_G, LOW);
-          analogWrite(LED_TRI_B, brightness);
-          brightness = brightness + fadeValue;
-          amberBrightness = amberBrightness + fadeValueAmber;
-
-          if(brightness <= 0 || brightness >= 255) {
-            fadeValue = -fadeValue;
-          }
-          if(amberBrightness <= 0 || amberBrightness >= 15) {
-            fadeValueAmber = -fadeValueAmber;
-          }
-
-          if(B0_state == notPRESSED) {
-            state = 6;
-          }
-          break;
-        case 6: // GREEN
+        case 0x68: // GREEN
           digitalWrite(LED_TRI_R, LOW);
           digitalWrite(LED_TRI_B, LOW);
           analogWrite(LED_TRI_G, brightness);
@@ -569,31 +496,9 @@ void loop() {
           if(amberBrightness <= 0 || amberBrightness >= 15) {
             fadeValueAmber = -fadeValueAmber;
           }
-
-          if(B0_state == normalPRESS) {
-            state = 7;
-          }
           break;
 
-        case 7: // GREEN
-          digitalWrite(LED_TRI_R, LOW);
-          digitalWrite(LED_TRI_B, LOW);
-          analogWrite(LED_TRI_G, brightness);
-          brightness = brightness + fadeValue;
-          amberBrightness = amberBrightness + fadeValueAmber;
-
-          if(brightness <= 0 || brightness >= 255) {
-            fadeValue = -fadeValue;
-          }
-          if(amberBrightness <= 0 || amberBrightness >= 15) {
-            fadeValueAmber = -fadeValueAmber;
-          }
-
-          if(B0_state == notPRESSED) {
-            state = 8;
-          }
-          break;
-        case 8: // RED
+        case 0x69: // RED
           digitalWrite(LED_TRI_G, LOW);
           digitalWrite(LED_TRI_B, LOW);
           analogWrite(LED_TRI_R, brightness);
@@ -606,32 +511,9 @@ void loop() {
           if(amberBrightness <= 0 || amberBrightness >= 15) {
             fadeValueAmber = -fadeValueAmber;
           }
-
-          if(B0_state == normalPRESS) {
-            state = 9;
-          }
           break;
 
-        case 9: // RED
-          digitalWrite(LED_TRI_G, LOW);
-          digitalWrite(LED_TRI_B, LOW);
-          analogWrite(LED_TRI_R, brightness);
-          brightness = brightness + fadeValue;
-          amberBrightness = amberBrightness + fadeValueAmber;
-
-          if(brightness <= 0 || brightness >= 255) {
-            fadeValue = -fadeValue;
-          }
-          if(amberBrightness <= 0 || amberBrightness >= 15) {
-            fadeValueAmber = -fadeValueAmber;
-          }
-
-          if(B0_state == notPRESSED) {
-            state = 0;
-          }
-          break;
-
-        default: state = 0;
+        default: break;
       }
     }
   }
@@ -640,7 +522,7 @@ void loop() {
   {
     static unsigned long module_time, module_delay;
     static bool module_doStep;
-    static unsigned char state0, state1;
+    static unsigned char state0, state1, state2;
     static bool firstTime;
     
     if (init_module4_clock) {
@@ -650,7 +532,9 @@ void loop() {
       init_module4_clock = false;
       state0 = 0;
       state1 = 0;
+      state2 = 0;
       firstTime = true;
+      trafficFirstRun = true;
     }
     else {
       unsigned long m = millis();
@@ -699,6 +583,35 @@ void loop() {
         digitalWrite(LED_GREEN_1, LOW);
         digitalWrite(LED_RED_1, LOW);
         state0 = 0;
+      }
+
+      if(B1_state == normalPRESS) {
+        switch(state2) {
+          case 0: //RED
+            digitalWrite(LED_TRI_G, LOW);
+            digitalWrite(LED_TRI_R, HIGH);
+            state2 = 1;
+            break;
+          case 1: //AMBER
+            analogWrite(LED_TRI_R, 255);
+            analogWrite(LED_TRI_G, 30);
+            state2 = 2;
+            break;
+          case 2: //GREEN
+            digitalWrite(LED_TRI_R, LOW);
+            digitalWrite(LED_TRI_G, HIGH);
+            state2 = 0;
+            break;
+          default: 
+            state2 = 0; 
+            break;
+        }  
+      }
+
+      else {
+        digitalWrite(LED_TRI_R, LOW);
+        digitalWrite(LED_TRI_G, LOW);
+        state2 = 0;
       }
 
       if (B2_state == normalPRESS) {
@@ -764,56 +677,27 @@ void loop() {
           init_module3_clock = true; // 3-COLOR
           init_module4_clock = true; // FRUIT MACHINE
           init_module9_clock = true; // TRAFFIC LIGHTS EQ
-          /*if (B1_state == normalPRESS)
-          {
-            state = 1;
-          }*/
           break;
         
         case 0x61: // MODULE 3 ON, MODULE 4 OFF, MODULE 9 ON, WAITING FOR THE BUTTON TO BE PRESSED
         case 0x62:
         case 0x63:
+        case 0x64:
+        case 0x65:
+        case 0x66:
+        case 0x67:
+        case 0x68:
+        case 0x69:
           init_module3_clock = false;
           init_module4_clock = true;
           init_module9_clock = false; // TRAFFIC LIGHTS
-          /*if (B1_state == normalPRESS) {
-            state = 3;           
-          }*/
           break;
 
-        case 4:   // MODULE 3 OFF, MODULE 4 ON, MODULE 9 OFF, WAITING FOR THE BUTTON TO BE PRESSED
+        case 0x6A:   // MODULE 3 OFF, MODULE 4 ON, MODULE 9 OFF, WAITING FOR THE BUTTON TO BE PRESSED
           init_module3_clock = true;
           init_module4_clock = false;
           init_module9_clock = true; // TRAFFIC LIGHTS EQ
-          /*if (B1_state == normalPRESS) {
-            state = 5;           
-          }*/
           break;
-            
-        case 5:   // MODULE 3 OFF, MODULE 4 ON, MODULE 9 OFF, WAITING FOR THE BUTTON TO BE RELEASED
-          init_module3_clock = true;
-          init_module4_clock = false;
-          init_module9_clock = true; // TRAFFIC LIGHTS EQ
-          /*if (B1_state == notPRESSED) {
-            state = 0; // STATE 0, MUST BE CHANGED TO 6 FOR OTHER MODULES TO WORK !!!  
-          }*/
-          break;
-
-        /*case 6:   // MODULE 9 ON, MODULE 4 ON, WAITING FOR THE BUTTON TO BE PRESSED
-          init_module3_clock = false;
-          init_module4_clock = false;
-          if (B1_state == normalPRESS) {
-            state = 7;           
-          }
-          break;
-            
-        case 7:   // MODULE 3 ON, MODULE 4 ON, WAITING FOR THE BUTTON TO BE RELEASED
-          init_module3_clock = false;
-          init_module4_clock = false;
-          if (B1_state == notPRESSED) {
-            state = 0;           
-          }
-          break;*/
 
         default: 
           break;
@@ -933,14 +817,14 @@ void loop() {
   {
     static unsigned long module_time, module_delay;
     static bool module_doStep;
-    //static int state;
+    static char state;
     //unsigned long timeStamp;
     
     if (init_module9_clock) {
       module_delay = 5;
       module_time = millis();
       module_doStep = false;
-      //state = 0;
+      state = 0;
       trafficLightsStateEQ = 0;
       trafficLightsTimeStampEQ = millis();
       trafficLightsState1P = 0;
@@ -962,7 +846,13 @@ void loop() {
     }
 
     if (module_doStep) {
-      switch(arg) {
+
+      for(int i = 0x61; i<=0x63; i++) {
+        if(arg == i) {
+          state = arg;
+        }
+      }
+      switch(state) {
         case 0x61: // EQ
           //displayUpdate(displayOutput);
           if(!(traffic1PRunning || traffic2PRunning)) {
@@ -1272,6 +1162,8 @@ void trafficLightsEQ() {
         digitalWrite(LED_YELLOW_2, LOW);
         trafficLightsStateEQ = 1;
         trafficLightsTimeStampEQ = millis();
+        trafficOnce2P = true;
+        trafficOnce1P = true;
         trafficOnceEQ = true;
         trafficEQRunning = false;
       }
@@ -1418,6 +1310,8 @@ void trafficLights1P() {
         trafficLightsState1P = 1;
         trafficLightsTimeStamp1P = millis();
         trafficOnce1P = true;
+        trafficOnceEQ = true;
+        trafficOnce2P = true;
         traffic1PRunning = false;
       }
       break;
@@ -1564,6 +1458,8 @@ void trafficLights2P() {
         trafficLightsState2P = 1;
         trafficLightsTimeStamp2P = millis();
         trafficOnce2P = true;
+        trafficOnce1P = true;
+        trafficOnceEQ = true;
         traffic2PRunning = false;
       }
       break;
@@ -1576,7 +1472,9 @@ void requestEvent() {
 
 void receiveEvent(int num) {
   while(0 < Wire.available()) {
-    lastArg = arg;
+    if(arg == 0x61 || arg == 0x62 || arg == 0x63) {
+      lastArg = arg;
+    }
     arg = Wire.read();
 
     Serial.print("Arg: ");

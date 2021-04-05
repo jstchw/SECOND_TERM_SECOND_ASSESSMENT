@@ -231,7 +231,7 @@ void pullLow (unsigned char pin) {
 /* === WEB FUNCTIONS === */
 
 void handleRoot() {
-  if(serverHTTPS.hasArg("traffic")) {
+  if(serverHTTPS.hasArg("traffic") || serverHTTPS.hasArg("tri") || serverHTTPS.hasArg("fruit")) {
     handleSubmit();
     serverHTTPS.send(200, "text/html", INDEX_HTML);
   }
@@ -243,7 +243,7 @@ void handleRoot() {
 void handleSubmit() {
   String arg;
 
-  if(!serverHTTPS.hasArg("traffic") && !serverHTTPS.hasArg("fruit")) {
+  if(!serverHTTPS.hasArg("traffic") && !serverHTTPS.hasArg("fruit") && !serverHTTPS.hasArg("tri")) {
     return;
   }
 
@@ -252,15 +252,40 @@ void handleSubmit() {
     sendData(arg);
     arg.clear();
   }
+
+  if(serverHTTPS.hasArg("tri")) {
+    arg = serverHTTPS.arg("tri");
+    sendData(arg);
+    arg.clear();
+  }
+
+  if(serverHTTPS.hasArg("fruit")) {
+    arg = serverHTTPS.arg("fruit");
+    sendData(arg);
+    arg.clear();
+  }
 }
 
 void sendData(String arg) {
   Wire.beginTransmission(8);
-  if(arg == "a") Wire.write(0x61);
-  else if(arg == "b") Wire.write(0x62);
-  else if(arg == "c") Wire.write(0x63);
+
+  if(arg == "traffic_a") Wire.write(0x61);
+  else if(arg == "traffic_b") Wire.write(0x62);
+  else if(arg == "traffic_c") Wire.write(0x63);
+  else if(arg == "traffic_d") Wire.write(0x60);
+
+  if(arg == "tri_a") Wire.write(0x65);
+  else if(arg == "tri_b") Wire.write(0x66);
+  else if(arg == "tri_c") Wire.write(0x67);
+  else if(arg == "tri_d") Wire.write(0x68);
+  else if(arg == "tri_e") Wire.write(0x69);
+
+  if(arg == "fruit_a") Wire.write(0x60);
+  else if(arg == "fruit_b") Wire.write(0x6A);
+
+
   Wire.endTransmission(true);
-  Serial.println("Arg sent");
+  Serial.println("Arg sent: " + arg);
 }
 
 

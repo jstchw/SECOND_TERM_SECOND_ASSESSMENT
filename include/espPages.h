@@ -51,16 +51,40 @@ static const char INDEX_HTML[] PROGMEM = R"EOF(
                 margin: 3%;
             }
 
+            .bar {
+                width: 30%;
+            }
+
         </style>
     </head>
     <body>
         <div class=box id=title>Control Panel</div>
         <div class=box id=content>
             <form action=/ method="POST">
-                <div><input type=radio name="traffic" value="a">Traffic Lights Equal Priority</div>
-                <div><input type=radio name="traffic" value="b">Traffic Lights Set 1 Priority</div>
-                <div><input type=radio name="traffic" value="c">Traffic Lights Set 2 Priority</div>
-                <div class="button"><input type=submit name="submit" value="Proceed"></div>
+                <div>- Traffic Lights -</div><hr class = bar>
+                <div><input type=radio name="traffic" value="traffic_d">Off</div>
+                <div><input type=radio name="traffic" value="traffic_a">Equal Priority</div>
+                <div><input type=radio name="traffic" value="traffic_b">Set 1 Priority</div>
+                <div><input type=radio name="traffic" value="traffic_c">Set 2 Priority</div>
+                <br>
+                <div class="button"><input type=submit name="submit" value="Configure Traffic Lights"></div>
+            </form>
+            <form action=/ method="POST">
+                <div>- Tri-color LED -</div><hr class = bar>
+                <div><input type=radio name="tri" value="tri_a">Off</div>
+                <div><input type=radio name="tri" value="tri_b">Hazard</div>
+                <div><input type=radio name="tri" value="tri_c">Emergency</div>
+                <div><input type=radio name="tri" value="tri_d">Doctor</div>
+                <div><input type=radio name="tri" value="tri_e">Police</div>
+                <br>
+                <div class="button"><input type=submit name="submit" value="Configure LED"></div>
+            </form>
+            <form action=/ method="POST">
+            <div>- Fruit Machine -</div><hr class = bar>
+                <div><input type=radio name="fruit" value="fruit_a">Off</div>
+                <div><input type=radio name="fruit" value="fruit_b">On</div>
+                <br>
+                <div class="button"><input type=submit name="submit" value="Configure Fruit Machine"></div>
             </form>
         </div>
     </body>
