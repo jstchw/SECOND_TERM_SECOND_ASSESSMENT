@@ -71,7 +71,7 @@ byte displayOutput;
 /* === TRAFFIC LIGHTS MANAGER VARIABLES === */
 int trafficLightsStateEQ, trafficLightsState1P, trafficLightsState2P;
 unsigned long trafficLightsTimeStampEQ, trafficLightsTimeStamp1P, trafficLightsTimeStamp2P;
-bool trafficEQRunning, traffic1PRunning, traffic2PRunning, trafficFirstRun, trafficOnceEQ, trafficOnce1P, trafficOnce2P;
+bool trafficEQRunning, traffic1PRunning, traffic2PRunning, trafficFirstRun, trafficOnceEQ, trafficOnce1P, trafficOnce2P, tryThisOne;
 
 /* === LED VARIABLES === */
 float brightness, fadeValue, fadeValueAmber, amberBrightness;
@@ -96,6 +96,8 @@ void trafficLights1P();
 void trafficLights2P();
 void requestEvent();
 void receiveEvent(int num);
+void turnOffLEDS();
+void updateTrafficLights();
 
 
 void setup() {
@@ -172,6 +174,10 @@ void setup() {
   trafficLightsTimeStamp1P = 0;
   trafficLightsTimeStamp2P = 0;
   trafficFirstRun = true;
+  trafficOnce1P = true;
+  trafficOnce2P = true;
+  trafficOnceEQ = true;
+  tryThisOne = true;
 
   /* === SERIAL MONITOR SETUP === */
   Serial.begin(9600);
@@ -673,12 +679,23 @@ void loop() {
 
     if (module_doStep) {
       switch(arg) {
-        case 0:   // MODULE 3 (3-COLOR-MODE) OFF, MODULE 4 (FRUIT MACHINE) OFF, MODULE 9 OFF, WAITING FOR THE BUTTON TO BE PRESSED
+        case 0x60:   // MODULE 3 (3-COLOR-MODE) OFF, MODULE 4 (FRUIT MACHINE) OFF, MODULE 9 OFF, WAITING FOR THE BUTTON TO BE PRESSED
           init_module3_clock = true; // 3-COLOR
           init_module4_clock = true; // FRUIT MACHINE
           init_module9_clock = true; // TRAFFIC LIGHTS EQ
+
+          //Resetting the vars
+          trafficFirstRun = true;
+          traffic1PRunning = false;
+          trafficEQRunning = false;
+          traffic2PRunning = false;
+          trafficOnceEQ = true;
+          trafficOnce1P = true;
+          trafficOnce2P = true;
+          turnOffLEDS();
           break;
         
+        //Traffic lights and 3 color mode
         case 0x61: // MODULE 3 ON, MODULE 4 OFF, MODULE 9 ON, WAITING FOR THE BUTTON TO BE PRESSED
         case 0x62:
         case 0x63:
@@ -693,10 +710,21 @@ void loop() {
           init_module9_clock = false; // TRAFFIC LIGHTS
           break;
 
+        //Fruit Machine
         case 0x6A:   // MODULE 3 OFF, MODULE 4 ON, MODULE 9 OFF, WAITING FOR THE BUTTON TO BE PRESSED
           init_module3_clock = true;
           init_module4_clock = false;
           init_module9_clock = true; // TRAFFIC LIGHTS EQ
+
+          //Resetting the vars
+          trafficFirstRun = true;
+          traffic1PRunning = false;
+          trafficEQRunning = false;
+          traffic2PRunning = false;
+          trafficOnceEQ = true;
+          trafficOnce1P = true;
+          trafficOnce2P = true;
+          turnOffLEDS();
           break;
 
         default: 
@@ -714,7 +742,7 @@ void loop() {
     unsigned long timeStamp;
     
     if (init_module6_clock) {
-      module_delay = 10;
+      module_delay = 100;
       module_time = millis();
       module_doStep = false;
       init_module6_clock = false;
@@ -736,7 +764,7 @@ void loop() {
           timeStamp = millis();
         case 1:
           //Serial.println("SWITCH I: CASE 1");
-          if(((long)(millis() - timeStamp)) < 15) {
+          if(((long)(millis() - timeStamp)) < 200) {
             state = 1;
           }
           else {
@@ -818,7 +846,6 @@ void loop() {
     static unsigned long module_time, module_delay;
     static bool module_doStep;
     static char state;
-    //unsigned long timeStamp;
     
     if (init_module9_clock) {
       module_delay = 5;
@@ -854,7 +881,6 @@ void loop() {
       }
       switch(state) {
         case 0x61: // EQ
-          //displayUpdate(displayOutput);
           if(!(traffic1PRunning || traffic2PRunning)) {
             displayOutput |= B11101110;
             trafficLightsEQ();
@@ -865,15 +891,9 @@ void loop() {
           else if(lastArg == 0x63) {
             trafficLights2P();
           }
-          /*
-          b_trafficLightsEQ = true; // EQUAL MODE
-          b_trafficLights1P = false; // 1 SET PRIORITY MODE
-          b_trafficLights2P = false; // 2 SET PRIORITY MODE
-          */
           break;
 
         case 0x62: // SET 1 PRIORITY
-          //displayUpdate(displayOutput);
           if(!(trafficEQRunning || traffic2PRunning)) {
             displayOutput |= B00111110;
             trafficLights1P();
@@ -884,15 +904,9 @@ void loop() {
           else if(lastArg == 0x63) {
             trafficLights2P();
           }
-          /*
-          b_trafficLightsEQ = false; // EQUAL MODE
-          b_trafficLights1P = true; // 1 SET PRIORITY MODE
-          b_trafficLights2P = false; // 2 SET PRIORITY MODE
-          */
           break;
 
         case 0x63: // SET 2 PRIORITY
-          //displayUpdate(displayOutput);
           if(!(trafficEQRunning || traffic1PRunning)) {
             displayOutput |= B10011100;
             trafficLights2P();
@@ -903,15 +917,8 @@ void loop() {
           else if(lastArg == 0x62) {
             trafficLights1P();
           }
-          /*
-          b_trafficLightsEQ = false; // EQUAL MODE
-          b_trafficLights1P = false; // 1 SET PRIORITY MODE
-          b_trafficLights2P = true; // 2 SET PRIORITY MODE
-          */
           break;
       }
-
-      //trafficLightsEQ();
     }
   }
 
@@ -1028,9 +1035,9 @@ void trafficLightsEQ() {
     case 0: // STARTUP PHASE
       if(trafficFirstRun) {
         if(((long)(millis() - trafficLightsTimeStampEQ)) < 2000) {
-        trafficLightsStateEQ = 0;
-        digitalWrite(LED_YELLOW_1, HIGH);
-        digitalWrite(LED_YELLOW_2, HIGH);
+          trafficLightsStateEQ = 0;
+          digitalWrite(LED_YELLOW_1, HIGH);
+          digitalWrite(LED_YELLOW_2, HIGH);
         } 
         else {
           digitalWrite(LED_YELLOW_1, LOW);
@@ -1048,7 +1055,6 @@ void trafficLightsEQ() {
         trafficOnceEQ = false;
       }
       if(((long)(millis() - trafficLightsTimeStampEQ)) < 1000) {
-        //Serial.println(trafficLightsTimeStampEQ);
         trafficEQRunning = true;
         trafficLightsStateEQ = 1;
         digitalWrite(LED_RED_1, HIGH);
@@ -1488,6 +1494,30 @@ void displayUpdate(byte eightBits) {
   digitalWrite(latchPin, LOW); // Prepare the shift register for data
   shiftOut(dataPin, clockPin, LSBFIRST, eightBits); // Send the data
   digitalWrite(latchPin, HIGH); // Update the display
+}
+
+void turnOffLEDS() {
+  //Turning off the rgb led
+  digitalWrite(LED_TRI_R, LOW);
+  digitalWrite(LED_TRI_B, LOW);
+  digitalWrite(LED_TRI_G, LOW);
+  
+  //Turning off normal LEDs
+  digitalWrite(LED_RED_1, LOW);
+  digitalWrite(LED_RED_2, LOW);
+  digitalWrite(LED_GREEN_1, LOW);
+  digitalWrite(LED_GREEN_2, LOW);
+  digitalWrite(LED_YELLOW_1, LOW);
+  digitalWrite(LED_YELLOW_2, LOW);
+}
+
+void updateTrafficLights() {
+  if(tryThisOne) {
+    trafficLightsTimeStampEQ = millis();
+    trafficLightsTimeStamp1P = millis();
+    trafficLightsTimeStamp2P = millis();
+    tryThisOne = false;
+  }
 }
 
 byte numToBits(int number) {

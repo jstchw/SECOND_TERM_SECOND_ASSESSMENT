@@ -32,7 +32,7 @@ int managerState;
 bool trigger;
 
 /* === MODULE VARIABLES === */
-bool init_module0_clock;
+bool init_module0_clock, init_module2_clock;
 
 /* === FUNCTION PROTOTYPES === */
 bool granted();
@@ -53,6 +53,7 @@ void setup() {
   trigger = false;
 
   init_module0_clock = true;
+  init_module2_clock = true;
 
   /* === LED SETUP === */
   pinMode(LED, OUTPUT);
@@ -141,7 +142,7 @@ void loop() {
     unsigned long timeStamp;
     
     if (init_module0_clock) {
-      module_delay = 1;
+      module_delay = 10;
       module_time = millis();
       module_doStep = false;
       init_module0_clock = false;
@@ -165,7 +166,7 @@ void loop() {
           timeStamp = millis();
         case 1:
           //Serial.println("SWITCH I: CASE 1");
-          if(((unsigned long)(millis() - timeStamp)) < 15) {
+          if(((unsigned long)(millis() - timeStamp)) < 750) {
             state = 1;
           }
           else {
@@ -185,7 +186,8 @@ void loop() {
           }
           break;
         case 3:
-          //Serial.println("SWITCH I: CASE 3");
+          //requestStatus();
+          Serial.println("Status Requested...");
           LED_ON;
           trigger = false;
           state = 0;
@@ -210,8 +212,6 @@ void loop() {
         serverHTTP.handleClient();
       }
   }
-
-  
 }
 
 /* === FUNCTIONS === */
