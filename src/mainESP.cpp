@@ -34,6 +34,10 @@ bool trigger;
 /* === MODULE VARIABLES === */
 bool init_module0_clock, init_module2_clock;
 
+/* === WEB VARS === */
+unsigned char status;
+bool receiveFlag;
+
 /* === FUNCTION PROTOTYPES === */
 bool granted();
 void leaveHigh(unsigned char pin);
@@ -42,6 +46,10 @@ void handleRoot();
 void handleSubmit();
 void redirectHTTPS();
 void sendData(String arg);
+void receiveEvent(int num);
+void requestEvent();
+void sendRespond();
+void getAck();
 
 void setup() {
   /* === RESOURCE MANAGER SETUP === */
@@ -83,6 +91,11 @@ void setup() {
 
   /* === WIRE LIB SETUP === */
   Wire.begin(D6, D7);
+  //Wire.begin(8);
+  //Wire.begin(9);
+  Wire.onReceive(receiveEvent);
+  //Wire.onRequest(requestEvent);
+  receiveFlag = false;
 }
 
 void loop() {
@@ -103,8 +116,6 @@ void loop() {
       break;
 
     case TriggerNotGranted:
-      //Serial.print("DEMAND: LOW ");
-      //Serial.println("TriggerNotGranted");
       pullLow(DEMAND);
       if(trigger && !granted()) {
         managerState = TriggerNotGranted;
@@ -118,8 +129,6 @@ void loop() {
       break;
 
     case TriggerIamMaster:
-      //Serial.print("DEMAND: LOW ");
-      //Serial.println("TriggerIamMaster");
       pullLow(DEMAND);
       if(trigger && granted()) {
         managerState = TriggerIamMaster;
@@ -161,11 +170,9 @@ void loop() {
     if (module_doStep) {
       switch(state) {
         case 0:
-          //Serial.println("SWITCH I: CASE 0");
           LED_OFF;
           timeStamp = millis();
         case 1:
-          //Serial.println("SWITCH I: CASE 1");
           if(((unsigned long)(millis() - timeStamp)) < 750) {
             state = 1;
           }
@@ -175,19 +182,20 @@ void loop() {
           }
           break;
         case 2:
-          //Serial.println("SWITCH I: CASE 2");
           if(managerState == TriggerIamMaster) {
             state = 3;
           }
           else {
             state = 2;
-            //Serial.println(state);
-            //Serial.println(TriggerIamMaster);
           }
           break;
         case 3:
           //requestStatus();
-          Serial.println("Status Requested...");
+          //if (receiveFlag) Serial.println("1");
+          //Serial.println(status + "Arduino");
+          //sendRespond();
+          //Serial.println("Status Requested...");
+          getAck();
           LED_ON;
           trigger = false;
           state = 0;
@@ -286,6 +294,37 @@ void sendData(String arg) {
 
   Wire.endTransmission(true);
   Serial.println("Arg sent: " + arg);
+}
+
+void requestEvent() {
+  //Wire.requestFrom(8, 1);
+}
+
+void receiveEvent(int num) {
+  while(0 < Wire.available()) {
+    status = Wire.read();
+  }
+  receiveFlag = true;
+}
+
+void sendRespond() {
+  if(receiveFlag) {
+    Wire.beginTransmission(8);
+    if(status == 0x41) {
+      Wire.write(0x60); //Confirmation (change idle state from 0x60 to 0x59 NANO)
+      Serial.println("Confirmation sent to Nano");
+    }
+    receiveFlag = false;
+    Wire.endTransmission(true);
+  }
+}
+
+void getAck() {
+  Wire.requestFrom(8, 1); //Requesting ack or nack from nano
+  while(0 < Wire.available()) {
+    status = Wire.read();
+  }
+  Serial.println(status);
 }
 
 

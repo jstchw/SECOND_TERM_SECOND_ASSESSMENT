@@ -78,8 +78,8 @@ float brightness, fadeValue, fadeValueAmber, amberBrightness;
 int i, j;
 
 /* === WEB VARIABLES === */
-unsigned char arg, lastArg;
-bool newArg;
+unsigned char arg, lastArg, respond;
+bool newArg, isGood, receiveFlag;
 
 /* === FUNCTION PROTOTYPES === */
 bool demandRequest();
@@ -98,6 +98,8 @@ void requestEvent();
 void receiveEvent(int num);
 void turnOffLEDS();
 void updateTrafficLights();
+void checkArg();
+void sendRespond();
 
 
 void setup() {
@@ -191,6 +193,7 @@ void setup() {
   arg = 0;
   lastArg = 0;
   newArg = false;
+  receiveFlag = false;
 }
 
 void loop() {
@@ -215,6 +218,10 @@ void loop() {
     case TriggerIamMaster:
       //Serial.print("GRANTED: HIGH ");
       //Serial.println("TriggerIamMaster");
+      if(receiveFlag) Serial.println("1");
+      //checkArg();
+      //sendRespond();
+      //if(isGood) Serial.println("Arg good");
       leaveHigh(GRANTED);
       if(!trigger && !demandRequest()) {
         managerState = NoTriggerNoDemand;
@@ -1473,7 +1480,7 @@ void trafficLights2P() {
 }
 
 void requestEvent() {
-  
+  checkArg();
 }
 
 void receiveEvent(int num) {
@@ -1488,7 +1495,40 @@ void receiveEvent(int num) {
     Serial.print("Last arg: ");
     Serial.println(lastArg);
   }
+  receiveFlag = true;
 }
+
+void checkArg() {
+  switch (arg){
+    case 0x59:
+    case 0x60:
+    case 0x61:
+    case 0x62:
+    case 0x63:
+    case 0x64:
+    case 0x65:
+    case 0x66:
+    case 0x67:
+    case 0x68:
+    case 0x69:
+    case 0x6A:
+      Wire.write(0x41);
+      break;
+    default:
+      Wire.write(0x78);
+      break;
+  }
+}
+
+/*void sendRespond() {
+  if(isGood) {
+    Wire.write(0x41); //ACK
+  }
+  else {
+    Wire.write(0x78); //NAK
+  }
+  receiveFlag = false;
+}*/
 
 void displayUpdate(byte eightBits) {
   digitalWrite(latchPin, LOW); // Prepare the shift register for data
