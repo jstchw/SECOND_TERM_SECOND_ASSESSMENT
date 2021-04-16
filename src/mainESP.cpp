@@ -195,7 +195,7 @@ void loop() {
           //Serial.println(status + "Arduino");
           //sendRespond();
           //Serial.println("Status Requested...");
-          getAck();
+          //getAck();
           LED_ON;
           trigger = false;
           state = 0;
@@ -294,17 +294,18 @@ void sendData(String arg) {
 
   Wire.endTransmission(true);
   Serial.println("Arg sent: " + arg);
+  getAck();
 }
 
 void requestEvent() {
-  //Wire.requestFrom(8, 1);
+
 }
 
 void receiveEvent(int num) {
   while(0 < Wire.available()) {
     status = Wire.read();
   }
-  receiveFlag = true;
+  receiveFlag = true; 
 }
 
 void sendRespond() {
@@ -325,6 +326,11 @@ void getAck() {
     status = Wire.read();
   }
   Serial.println(status);
+  /*if(status == 0x41) {
+    Wire.beginTransmission(8);
+    Wire.write(0x41); //ACK from ESP to NANO
+    Wire.endTransmission(true);
+  }*/
 }
 
 

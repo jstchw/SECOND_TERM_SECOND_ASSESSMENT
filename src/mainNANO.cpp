@@ -78,7 +78,7 @@ float brightness, fadeValue, fadeValueAmber, amberBrightness;
 int i, j;
 
 /* === WEB VARIABLES === */
-unsigned char arg, lastArg, respond;
+unsigned char arg, lastArg, respond, ack;
 bool newArg, isGood, receiveFlag;
 
 /* === FUNCTION PROTOTYPES === */
@@ -1488,14 +1488,14 @@ void receiveEvent(int num) {
     if(arg == 0x61 || arg == 0x62 || arg == 0x63) {
       lastArg = arg;
     }
-    arg = Wire.read();
+    //arg = Wire.read();
+    ack = Wire.read();
 
-    Serial.print("Arg: ");
-    Serial.println(arg);
-    Serial.print("Last arg: ");
-    Serial.println(lastArg);
+    Serial.print("Arg: " + arg);
+    Serial.print("Last arg: " + lastArg);
+    //Serial.println("Ack: " + ack);
   }
-  receiveFlag = true;
+  //receiveFlag = true;
 }
 
 void checkArg() {
