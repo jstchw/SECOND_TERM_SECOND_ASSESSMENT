@@ -50,6 +50,7 @@ void receiveEvent(int num);
 void requestEvent();
 void sendRespond();
 void getAck();
+void getStatus();
 
 void setup() {
   /* === RESOURCE MANAGER SETUP === */
@@ -280,7 +281,7 @@ void sendData(String arg) {
   if(arg == "traffic_a") Wire.write(0x61);
   else if(arg == "traffic_b") Wire.write(0x62);
   else if(arg == "traffic_c") Wire.write(0x63);
-  else if(arg == "traffic_d") Wire.write(0x60);
+  else if(arg == "traffic_d") Wire.write(0x59);
 
   if(arg == "tri_a") Wire.write(0x65);
   else if(arg == "tri_b") Wire.write(0x66);
@@ -288,7 +289,7 @@ void sendData(String arg) {
   else if(arg == "tri_d") Wire.write(0x68);
   else if(arg == "tri_e") Wire.write(0x69);
 
-  if(arg == "fruit_a") Wire.write(0x60);
+  if(arg == "fruit_a") Wire.write(0x59);
   else if(arg == "fruit_b") Wire.write(0x6A);
 
 
@@ -302,22 +303,15 @@ void requestEvent() {
 }
 
 void receiveEvent(int num) {
-  while(0 < Wire.available()) {
-    status = Wire.read();
-  }
-  receiveFlag = true; 
 }
 
 void sendRespond() {
-  if(receiveFlag) {
-    Wire.beginTransmission(8);
-    if(status == 0x41) {
-      Wire.write(0x60); //Confirmation (change idle state from 0x60 to 0x59 NANO)
-      Serial.println("Confirmation sent to Nano");
-    }
-    receiveFlag = false;
-    Wire.endTransmission(true);
+  Wire.beginTransmission(8);
+  if(status == 0x41) {
+    Wire.write(0x60); //Confirmation (change idle state from 0x60 to 0x59 NANO)
+    Serial.println("Confirmation sent to Nano");
   }
+    Wire.endTransmission(true);
 }
 
 void getAck() {
@@ -328,9 +322,13 @@ void getAck() {
   Serial.println(status);
   /*if(status == 0x41) {
     Wire.beginTransmission(8);
-    Wire.write(0x41); //ACK from ESP to NANO
+    Wire.write(0x60); //ACK from ESP to NANO
     Wire.endTransmission(true);
   }*/
+}
+
+void getStatus() {
+  Wire.requestFrom(8, 14); //Continue implementation
 }
 
 

@@ -78,7 +78,7 @@ float brightness, fadeValue, fadeValueAmber, amberBrightness;
 int i, j;
 
 /* === WEB VARIABLES === */
-unsigned char arg, lastArg, respond, ack;
+unsigned char arg, lastArg, respond, ack, dataType;
 bool newArg, isGood, receiveFlag;
 
 /* === FUNCTION PROTOTYPES === */
@@ -686,7 +686,7 @@ void loop() {
 
     if (module_doStep) {
       switch(arg) {
-        case 0x60:   // MODULE 3 (3-COLOR-MODE) OFF, MODULE 4 (FRUIT MACHINE) OFF, MODULE 9 OFF, WAITING FOR THE BUTTON TO BE PRESSED
+        case 0x59:   // MODULE 3 (3-COLOR-MODE) OFF, MODULE 4 (FRUIT MACHINE) OFF, MODULE 9 OFF, WAITING FOR THE BUTTON TO BE PRESSED
           init_module3_clock = true; // 3-COLOR
           init_module4_clock = true; // FRUIT MACHINE
           init_module9_clock = true; // TRAFFIC LIGHTS EQ
@@ -1488,20 +1488,28 @@ void receiveEvent(int num) {
     if(arg == 0x61 || arg == 0x62 || arg == 0x63) {
       lastArg = arg;
     }
-    //arg = Wire.read();
-    ack = Wire.read();
+    dataType = Wire.read();
+  }
 
-    Serial.print("Arg: " + arg);
-    Serial.print("Last arg: " + lastArg);
-    //Serial.println("Ack: " + ack);
+  Serial.println("Data Type: " + dataType);
+
+  if((dataType >= 0x61 && dataType <= 0x6A) || dataType == 0x59) {
+    arg = dataType;
+    Serial.println("Arg: " + arg);
+  }
+  if(dataType == 0x6B) {
+    //status
+  }
+  if(dataType == 0x60) {
+    ack = dataType;
+    Serial.println("Ack: " + ack);
   }
   //receiveFlag = true;
 }
 
 void checkArg() {
-  switch (arg){
+  switch (arg) {
     case 0x59:
-    case 0x60:
     case 0x61:
     case 0x62:
     case 0x63:
