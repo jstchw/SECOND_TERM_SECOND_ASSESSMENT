@@ -3,29 +3,9 @@
         <title>ESP8266 - Control Panel</title>
         <style>
             body {
-                width: 100wh;
-                height: 90vh;
-                color: #fff;
-                background: linear-gradient(-45deg, #990d81, #E73C7E, #23A6D5, #23D5AB, #74ef70);
-                background-size: 400% 400%;
-                -webkit-animation: Gradient 10s ease infinite;
-                -moz-animation: Gradient 10s ease infinite;
-                animation: Gradient 10s ease infinite;
+                /* color: #fff; */
                 font-family: 'Trebuchet MS', Sans-serif;
                 font-size: 1.4em;
-                background-attachment: fixed;
-            }
-
-            @keyframes Gradient {
-                0% {
-                    background-position: 0% 50%
-                }
-                50% {
-                    background-position: 100% 50%
-                }
-                100% {
-                    background-position: 0% 50%
-                }
             }
 
             .box {
@@ -35,8 +15,8 @@
                 border-radius: 10px;
                 width: 30%;
                 padding: 1%;
-                background: rgba(0,0,0,.7);
-                box-shadow: 2px 3px 4px rgba(0,0,0,.5);
+                /* background: rgba(0,0,0,.7); */
+                /* box-shadow: 2px 3px 4px rgba(0,0,0,.5); */
             }
 
             #content {
@@ -51,36 +31,90 @@
                 width: 30%;
             }
 
+            .title-box {
+                text-align: center;
+                width: auto;
+                padding: 1%;
+                /* background: rgba(255, 255, 255, 0.7); */
+                /* box-shadow: 2px 3px 4px rgba(0,0,0,.5); */
+            }
+
+            @media (pointer:none), (pointer:coarse) {
+                body {
+                    font-family: 'Courier New', monospace;
+                    font-size: 4em;
+                }
+
+                .title-box {
+                    background-color: rgb(0, 0, 0);
+                    box-shadow: 0px 5px 0px rgba(0,0,0,.5);
+                    color: #fff;
+                    position:fixed;
+                    top: 0;
+                    left: 0;
+                    width:100%;
+                    z-index:100;
+                }
+
+                .box {
+                    padding-top: 150px;
+                    width: 100%;
+                    font-style: oblique;
+                    font-weight: 1000;
+                }
+
+                input[type="radio"] {
+                    display: none;
+                }
+
+                input[type="radio"]:checked + label{
+                    text-decoration: underline;
+                }
+
+                input[type="submit"] {
+                    width: 15em;
+                    height: 3em;
+                    background-color: black;
+                    box-shadow: 3px 4px 5px rgba(0,0,0,.5);
+                    color: white;
+                    font-size: 50px;
+                    font-family: 'Courier New', monospace;
+                }
+
+                
+            }
+
         </style>
     </head>
     <body>
-        <div class=box id=title>Control Panel</div>
+        <div class=title-box>Control Panel</div>
+
         <div class=box id=content>
             <form action=/ method="POST">
                 <div>- Traffic Lights -</div><hr class = bar>
-                <div><input type=radio name="traffic" value="traffic_d">Off</div>
-                <div><input type=radio name="traffic" value="traffic_a">Equal Priority</div>
-                <div><input type=radio name="traffic" value="traffic_b">Set 1 Priority</div>
-                <div><input type=radio name="traffic" value="traffic_c">Set 2 Priority</div>
+                <label><div><input type=radio name="traffic" value="traffic_d" id="off1"><label for="off1">Off</label></div></label>
+                <label><div><input type=radio name="traffic" value="traffic_a" id="eq"><label for="eq">Equal Priority</label></div></label>
+                <label><div><input type=radio name="traffic" value="traffic_b" id="p1"><label for="p1">Set 1 Priority</label></div></label>
+                <label><div><input type=radio name="traffic" value="traffic_c" id="p2"><label for="p2">Set 2 Priority</label></div></label>
                 <br>
-                <div class="button"><input type=submit name="submit" value="Configure Traffic Lights"></div>
+                <label><div class="button"><input type=submit name="submit" value="Apply"></div></label>
             </form>
             <form action=/ method="POST">
                 <div>- Tri-color LED -</div><hr class = bar>
-                <div><input type=radio name="tri" value="tri_a">Off</div>
-                <div><input type=radio name="tri" value="tri_b">Hazard</div>
-                <div><input type=radio name="tri" value="tri_c">Emergency</div>
-                <div><input type=radio name="tri" value="tri_d">Doctor</div>
-                <div><input type=radio name="tri" value="tri_e">Police</div>
+                <label><div><input type=radio name="tri" value="tri_a" id="off2"><label for="off2">Off</label></div></label>
+                <label><div><input type=radio name="tri" value="tri_b" id="hazard"><label for="hazard">Hazard</label></div></label>
+                <label><div><input type=radio name="tri" value="tri_c" id="emergency"><label for="emergency">Emergency</label></div></label>
+                <label><div><input type=radio name="tri" value="tri_d" id="doctor"><label for="doctor">Doctor</label></div></label>
+                <label><div><input type=radio name="tri" value="tri_e" id="police"><label for="police">Police</label></div></label>
                 <br>
-                <div class="button"><input type=submit name="submit" value="Configure LED"></div>
+                <label><div class="button"><input type=submit name="submit" value="Apply"></div></label>
             </form>
             <form action=/ method="POST">
             <div>- Fruit Machine -</div><hr class = bar>
-                <div><input type=radio name="fruit" value="fruit_a">Off</div>
-                <div><input type=radio name="fruit" value="fruit_b">On</div>
+                <label><div><input type=radio name="fruit" value="fruit_a" id="off3"><label for="off3">Off</label></div></label>
+                <label><div><input type=radio name="fruit" value="fruit_b" id="on3"><label for="on3">On</label></div></label>
                 <br>
-                <div class="button"><input type=submit name="submit" value="Configure Fruit Machine"></div>
+                <label><div class="button"><input type=submit name="submit" value="Apply"></div></label>
             </form>
         </div>
     </body>

@@ -81,6 +81,9 @@ int i, j;
 unsigned char arg, lastArg, respond, ack, dataType;
 bool newArg, isGood, receiveFlag;
 
+/* === ADDITIONAL VARS === */
+bool b_resetVars;
+
 /* === FUNCTION PROTOTYPES === */
 bool demandRequest();
 void leaveHigh (unsigned char pin);
@@ -100,6 +103,7 @@ void turnOffLEDS();
 void updateTrafficLights();
 void checkArg();
 void sendRespond();
+void resetVars();
 
 
 void setup() {
@@ -182,7 +186,7 @@ void setup() {
   tryThisOne = true;
 
   /* === SERIAL MONITOR SETUP === */
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   /* === WIRE LIB SETUP === */
   Wire.begin(8);
@@ -190,10 +194,13 @@ void setup() {
   Wire.onReceive(receiveEvent);
 
   /* === WEB SETUP === */
-  arg = 0;
-  lastArg = 0;
+  arg = 0x59;
+  lastArg = 0x59;
   newArg = false;
   receiveFlag = false;
+
+  /* === ADDITIONAL SETUP === */
+  b_resetVars = true;
 }
 
 void loop() {
@@ -218,7 +225,7 @@ void loop() {
     case TriggerIamMaster:
       //Serial.print("GRANTED: HIGH ");
       //Serial.println("TriggerIamMaster");
-      if(receiveFlag) Serial.println("1");
+      //if(receiveFlag) Serial.println("1");
       //checkArg();
       //sendRespond();
       //if(isGood) Serial.println("Arg good");
@@ -420,6 +427,7 @@ void loop() {
       init_module3_clock = false;
       state = 0x0;
       //firstTime = true;
+      //trafficFirstRun = true;
     }
     else {
       unsigned long m = millis();
@@ -674,6 +682,7 @@ void loop() {
       module_doStep = false;
       init_module5_clock = false;
       //state = 0;
+      b_resetVars = true;
     }
     else {
       unsigned long m = millis();
@@ -692,14 +701,7 @@ void loop() {
           init_module9_clock = true; // TRAFFIC LIGHTS EQ
 
           //Resetting the vars
-          trafficFirstRun = true;
-          traffic1PRunning = false;
-          trafficEQRunning = false;
-          traffic2PRunning = false;
-          trafficOnceEQ = true;
-          trafficOnce1P = true;
-          trafficOnce2P = true;
-          turnOffLEDS();
+          resetVars();
           break;
         
         //Traffic lights and 3 color mode
@@ -724,14 +726,10 @@ void loop() {
           init_module9_clock = true; // TRAFFIC LIGHTS EQ
 
           //Resetting the vars
-          trafficFirstRun = true;
-          traffic1PRunning = false;
-          trafficEQRunning = false;
-          traffic2PRunning = false;
-          trafficOnceEQ = true;
-          trafficOnce1P = true;
-          trafficOnce2P = true;
-          turnOffLEDS();
+          if(b_resetVars) {
+            resetVars();
+            b_resetVars = false;
+          }
           break;
 
         default: 
@@ -880,7 +878,6 @@ void loop() {
     }
 
     if (module_doStep) {
-
       for(int i = 0x61; i<=0x63; i++) {
         if(arg == i) {
           state = arg;
@@ -1485,24 +1482,27 @@ void requestEvent() {
 
 void receiveEvent(int num) {
   while(0 < Wire.available()) {
-    if(arg == 0x61 || arg == 0x62 || arg == 0x63) {
-      lastArg = arg;
-    }
     dataType = Wire.read();
   }
 
-  Serial.println("Data Type: " + dataType);
+  //Serial.println("Data Type: " + dataType);
 
   if((dataType >= 0x61 && dataType <= 0x6A) || dataType == 0x59) {
+    if(arg == 0x61 || arg == 0x62 || arg == 0x63) {
+      lastArg = arg;
+    }
     arg = dataType;
-    Serial.println("Arg: " + arg);
+    Serial.print("Arg: ");
+    Serial.println(arg);
+    Serial.print("Last Arg: ");
+    Serial.println(lastArg);
   }
   if(dataType == 0x6B) {
     //status
   }
   if(dataType == 0x60) {
     ack = dataType;
-    Serial.println("Ack: " + ack);
+    //Serial.println("Ack: " + ack);
   }
   //receiveFlag = true;
 }
@@ -1566,6 +1566,17 @@ void updateTrafficLights() {
     trafficLightsTimeStamp2P = millis();
     tryThisOne = false;
   }
+}
+
+void resetVars() {
+  trafficFirstRun = true;
+  traffic1PRunning = false;
+  trafficEQRunning = false;
+  traffic2PRunning = false;
+  trafficOnceEQ = true;
+  trafficOnce1P = true;
+  trafficOnce2P = true;
+  turnOffLEDS();
 }
 
 byte numToBits(int number) {

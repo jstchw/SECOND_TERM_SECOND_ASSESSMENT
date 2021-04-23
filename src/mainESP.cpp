@@ -36,7 +36,7 @@ bool init_module0_clock, init_module2_clock;
 
 /* === WEB VARS === */
 unsigned char status;
-bool receiveFlag;
+bool receiveStatusFlag;
 
 /* === FUNCTION PROTOTYPES === */
 bool granted();
@@ -96,7 +96,7 @@ void setup() {
   //Wire.begin(9);
   Wire.onReceive(receiveEvent);
   //Wire.onRequest(requestEvent);
-  receiveFlag = false;
+  receiveStatusFlag = false;
 }
 
 void loop() {
@@ -152,7 +152,7 @@ void loop() {
     unsigned long timeStamp;
     
     if (init_module0_clock) {
-      module_delay = 10;
+      module_delay = 750;
       module_time = millis();
       module_doStep = false;
       init_module0_clock = false;
@@ -191,12 +191,8 @@ void loop() {
           }
           break;
         case 3:
-          //requestStatus();
-          //if (receiveFlag) Serial.println("1");
-          //Serial.println(status + "Arduino");
-          //sendRespond();
           //Serial.println("Status Requested...");
-          //getAck();
+          //getStatus();
           LED_ON;
           trigger = false;
           state = 0;
@@ -296,6 +292,7 @@ void sendData(String arg) {
   Wire.endTransmission(true);
   Serial.println("Arg sent: " + arg);
   getAck();
+  sendRespond();
 }
 
 void requestEvent() {
@@ -320,6 +317,7 @@ void getAck() {
     status = Wire.read();
   }
   Serial.println(status);
+  receiveStatusFlag = true;
   /*if(status == 0x41) {
     Wire.beginTransmission(8);
     Wire.write(0x60); //ACK from ESP to NANO
@@ -329,6 +327,7 @@ void getAck() {
 
 void getStatus() {
   Wire.requestFrom(8, 14); //Continue implementation
+
 }
 
 
