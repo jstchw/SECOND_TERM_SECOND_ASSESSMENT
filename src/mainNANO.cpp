@@ -747,7 +747,7 @@ void loop() {
     unsigned long timeStamp;
     
     if (init_module6_clock) {
-      module_delay = 100;
+      module_delay = 1;
       module_time = millis();
       module_doStep = false;
       init_module6_clock = false;
@@ -797,10 +797,6 @@ void loop() {
           trigger = false;
           calculateXYZ();
           calculateTemp();
-          //Serial.print("arduino: ");
-          //Serial.print(temp);
-          //Serial.print(", ");
-          //Serial.println(danger);
           state = 0;
           break;
 
@@ -842,6 +838,12 @@ void loop() {
     }
 
     if (module_doStep) {
+      if(danger) {
+        displayOutput |= B01111010; //d for danger
+      }
+      else {
+        displayOutput |= B10110110; //S for safe
+      }
       displayUpdate(displayOutput);
     }
   }
@@ -886,7 +888,7 @@ void loop() {
       switch(state) {
         case 0x61: // EQ
           if(!(traffic1PRunning || traffic2PRunning)) {
-            displayOutput |= B11101110;
+            //displayOutput |= B11101110;
             trafficLightsEQ();
           }
           else if(lastArg == 0x62) {
@@ -899,7 +901,7 @@ void loop() {
 
         case 0x62: // SET 1 PRIORITY
           if(!(trafficEQRunning || traffic2PRunning)) {
-            displayOutput |= B00111110;
+            //displayOutput |= B00111110;
             trafficLights1P();
           }
           else if(lastArg == 0x61) {
@@ -912,7 +914,7 @@ void loop() {
 
         case 0x63: // SET 2 PRIORITY
           if(!(trafficEQRunning || traffic1PRunning)) {
-            displayOutput |= B10011100;
+            //displayOutput |= B10011100;
             trafficLights2P();
           }
           else if(lastArg == 0x61) {
